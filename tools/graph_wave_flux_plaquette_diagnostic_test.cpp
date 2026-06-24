@@ -61,6 +61,6 @@ int main() {
  std::printf(" %5d | %.4f %.4f %.4f\n", ns, t0.back()[2], tg.back()[2], tp.back()[2]); }
  std::printf(" (constructive at 0 and decoupled at pi are robust; the golden SNAPSHOT value moves with time)\n");
 
- std::printf("\n DIAGNOSTIC COMPLETE (data only; no pass/fail).\n");
+ std::printf("\n RESULT : DIAGNOSTIC (data gathered, not a pass/fail gate)\n");
  return 0;
 }
