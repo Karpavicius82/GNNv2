@@ -12,9 +12,11 @@ threw the phase away. Fix = keep the wave complete and phase-preserving end to e
    the order. (tau=0 -> no evolution -> collapses to an order-blind bag = the control.)
 3. **The canonical signal is the COMPLETE complex field psi.** Not |psi|^2, not the
    edge-current channel. Those are real projections = lossy diagnostics only.
-4. **Read phase-preservingly and completely.** Compare by the complex overlap
-   <psi_a|psi_b> (interference), or a complete template/matched-filter over the full
-   complex field. NEVER collapse to real scalars + a linear classifier before the
+4. **Read phase-preservingly and completely.** The canonical observable is
+   `|<psi_a|psi_b>|^2`: it preserves phase information and is gauge-invariant.
+   Physical interference reads the related cross-term
+   `2 Re<psi_a|psi_b>`, which is native and useful when the relative phase setup is
+   controlled. NEVER collapse to real scalars + a linear classifier before the
    comparison -- that is exactly where order (53% -> chance) was lost.
 5. **To approach 100%, collect ALL the energy.** Parseval: the complete mode basis
    carries 100% (reconstruction ~1e-13). Truncated modes / real projections / greedy
@@ -30,3 +32,16 @@ decode-back with COMPLEX overlap recovers words+order well above chance; the sam
 field read by real edge-currents + linear classifier does not. Same wave, opposite
 result -> the axis is phase-preserving (complex) vs phase-collapsing (real) readout,
 not "physics vs arithmetic". See docs/WAVE_FIDELITY.md.
+
+## What proves the semantic substrate adds value
+
+Complete readout alone proves that the wave did not lose the information. It does
+not prove that the graph is semantic: a matched-random unitary substrate can also
+decode well because invertible memory is generic. The required control is:
+
+```text
+real semantic substrate > matched-random substrate
+with the SAME complete phase-preserving readout
+```
+
+That is the value cut. It isolates semantic structure from generic unitary memory.
