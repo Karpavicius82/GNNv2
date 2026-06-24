@@ -1,14 +1,16 @@
-// Streaming VALUE contract: the full energy/information chain on physics, no loss.
-//   stream -> dynamic sparse graph (no vocab cap) -> LOCAL UNITARY propagation
+// Streaming VALUE probe: semantic value through the physics chain.
+//   topic stream -> sparse graph plasticity -> LOCAL UNITARY propagation
 //   (energy conserved, light cone) -> COMPLEX-OVERLAP readout on the ACTIVE set
 //   (phase preserved) -> topic recognition.  Gate: REAL stream graph >> matched-
-//   RANDOM stream graph. If real beats random, the LEARNED semantic structure is
-//   load-bearing (not generic). No global VxV, no dictionary scan, no phase collapse.
+//   RANDOM stream graph. If real beats random, the streamed semantic structure is
+//   load-bearing (not generic). No global readout scan, no phase collapse.
 #define NOMINMAX
 #include "graph_wave_substrate.hpp"
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <deque>
 #include <random>
 #include <string>
@@ -42,8 +44,13 @@ static unordered_map<int,cd> propagate(const Graph& g, int src, double tau){
 static cd overlap(const unordered_map<int,cd>& a, const unordered_map<int,cd>& b){ cd s(0,0);
   for(auto&kv:a){auto it=b.find(kv.first); if(it!=b.end())s+=conj(kv.second)*it->second;} return s; }
 
-int main(){
-  const int TOPICS=3, PER=24, STREAM=60000; const double tau=0.5;
+static int argInt(char** argv, int argc, int index, int fallback) {
+  if (index >= argc) return fallback;
+  return atoi(argv[index]);
+}
+
+int main(int argc, char** argv){
+  const int TOPICS=3, PER=24, STREAM=argInt(argv, argc, 1, 60000); const double tau=0.5;
   // vocabulary: 3 topics x PER words; deterministic topical stream
   mt19937 rng(7); uniform_int_distribution<int> rt(0,TOPICS-1), rw(0,PER-1);
   auto buildGraph=[&](bool shuffle){ Graph g; for(int i=0;i<TOPICS*PER;i++)g.add();
@@ -56,7 +63,9 @@ int main(){
       Graph gx; for(int i=0;i<TOPICS*PER;i++)gx.add(); mt19937 rr(5); uniform_int_distribution<int> rn(0,TOPICS*PER-1);
       for(int i=0;i<(int)g.adj.size();i++)for(auto&kv:g.adj[i]) if(i<kv.first){int a=rn(rr),b=rn(rr); if(a!=b){gx.adj[a][b]=kv.second;gx.adj[b][a]=kv.second;}} return gx; }
     return g; };
+  auto t0=chrono::steady_clock::now();
   Graph real=buildGraph(false), rand_=buildGraph(true);
+  auto t1=chrono::steady_clock::now();
 
   auto eval=[&](Graph& g){
     // prototype per topic = superposition of propagated fields of first PER/2 words
@@ -66,11 +75,18 @@ int main(){
       int best=0;double bs=-1; for(int c=0;c<TOPICS;c++){double m=abs(overlap(f,proto[c])); if(m>bs){bs=m;best=c;}} ok+=(best==tp);tot++; }
     return 100.0*ok/tot; };
 
+  auto e0=chrono::steady_clock::now();
+  double realAcc=eval(real);
+  double randomAcc=eval(rand_);
+  auto e1=chrono::steady_clock::now();
+
   printf("=== STREAMING VALUE: real semantic stream graph vs matched-random ===\n");
-  printf("topics=%d words/topic=%d stream=%d  full chain: stream->dynamic graph->local\n",TOPICS,PER,STREAM);
-  printf("unitary propagation->complex overlap on active set (no cap/scan/phase-collapse)\n\n");
+  printf("topics=%d words/topic=%d stream=%d  full chain: stream->sparse plastic graph->local\n",TOPICS,PER,STREAM);
+  printf("unitary propagation->complex overlap on active topics (value probe, not vocab-scale probe)\n\n");
   printf("  topic recognition acc:  REAL semantic graph = %.1f%%   matched-RANDOM = %.1f%%   (chance %.0f%%)\n",
-         eval(real), eval(rand_), 100.0/TOPICS);
+         realAcc, randomAcc, 100.0/TOPICS);
+  printf("  build_sec=%.3f  eval_sec=%.3f\n",
+         chrono::duration<double>(t1-t0).count(), chrono::duration<double>(e1-e0).count());
   printf("\nIf REAL >> RANDOM, the streamed semantic structure is load-bearing through the\nfull physics chain -- learned online, weights-free, no information thrown away.\n");
-  return 0;
+  return realAcc > randomAcc + 20.0 ? 0 : 1;
 }
