@@ -216,39 +216,59 @@ int main() {
                             prRealF < 0.7 * prRandF);
   }
 
-  // [7] CAPACITY HORIZON: readable signal sinks into the noise floor -----------
-  // The horizon, measured on the medium's own interference readout. K items are
-  // superposed into ONE dense code (bind = interference, bundle = superposition);
-  // recall by unbinding + cleanup. Small K: near-lossless. Large K: the stored
-  // signal meets the 1/sqrt(D) noise floor -- the information horizon.
-  std::printf("\n[7] CAPACITY HORIZON (interference readout: signal -> noise floor)\n");
+  // [7] CAPACITY HORIZON, IN THE WAVE ITSELF -----------------------------------
+  // K items packed into ONE dense carrier: each item is a localized bump given a
+  // distinct MOMENTUM k_j (its physical address). Superposed at one place, they are
+  // the dense code (the horizon). Then the substrate's OWN DISPERSION sorts them in
+  // space -- different momenta travel at different group velocities v(k) = -2 sin k
+  // (the prism / Hawking-emission picture) -- and an aperture reads each channel.
+  // RESOLUTION criterion (read purely from aperture energies, Rayleigh-like): item j
+  // is resolved iff its aperture energy exceeds the energy at the MIDPOINTS to its
+  // neighbours. As K grows the channels crowd past the band+aperture resolution, the
+  // peaks merge into the midpoints, and recall sinks to the floor -- the horizon.
+  std::printf("\n[7] CAPACITY HORIZON in the wave (dispersion sorts momenta; apertures read)\n");
   {
-    const int D = 512;
-    std::mt19937_64 rng(0xC0FFEEULL);
-    auto atom = [&](void) { Vec a(D); std::uniform_real_distribution<double> u(-gw::kPi, gw::kPi);
-                            for (auto& z : a) z = std::polar(1.0 / std::sqrt((double)D), u(rng)); return a; };
-    auto recallAcc = [&](int K) {
-      std::vector<Vec> key(K), val(K);
-      for (int p = 0; p < K; ++p) { key[p] = atom(); val[p] = atom(); }
-      Vec mem(D, cd(0, 0));
-      for (int p = 0; p < K; ++p) for (int i = 0; i < D; ++i) mem[i] += key[p][i] * val[p][i];   // bind+bundle
-      int correct = 0; double sig = 0.0, dist = 0.0;
-      for (int p = 0; p < K; ++p) {
-        Vec probe(D); for (int i = 0; i < D; ++i) probe[i] = mem[i] * std::conj(key[p][i]);       // unbind
-        int best = -1; double bSim = -1.0, second = -1.0;
-        for (int q = 0; q < K; ++q) { double s = std::abs(overlap(probe, val[q]));
-          if (s > bSim) { second = bSim; bSim = s; best = q; } else if (s > second) second = s; }
-        if (best == p) ++correct;
-        sig += std::abs(overlap(probe, val[p])); dist += (best == p) ? second : bSim;
+    const int LN = 1024, lx0 = LN / 2, lR = 4, M = 200;
+    const double ldt = 0.3, sigma = 7.0, kLo = -1.3, kHi = 1.3;
+    gw::Graph L(LN); for (int i = 0; i + 1 < LN; ++i) L.addEdge(i, i + 1, 1.0);   // open line
+    gw::Stepper LU; LU.build(L.h, ldt);
+
+    // returns {recall (fraction Rayleigh-resolved), mean peak/midpoint contrast}.
+    // contrast -> 1 is the floor: peak == midpoint == fully merged (unreadable).
+    auto horizon = [&](int K) {
+      Vec psi(LN, cd(0, 0));
+      std::vector<int> c(K);
+      for (int j = 0; j < K; ++j) {
+        double kj = (K == 1) ? 0.0 : kLo + (kHi - kLo) * j / (K - 1);
+        double vj = -2.0 * std::sin(kj);                       // group velocity -> where channel j emerges
+        c[j] = (int)std::lround(lx0 + vj * (M * ldt));
+        for (int x = 0; x < LN; ++x) { double d = x - lx0; psi[x] += std::exp(cd(-d * d / (2 * sigma * sigma), kj * x)); }
       }
-      return std::make_pair((double)correct / K, sig / std::max(1e-9, dist));
+      psi = normalize(psi);
+      for (int s = 0; s < M; ++s) psi = LU.step(psi);          // STREAM: dispersion sorts the momenta
+      std::sort(c.begin(), c.end());
+      int resolved = 0; double sumC = 0.0;
+      for (int j = 0; j < K; ++j) {
+        double ej = apertureEnergy(psi, c[j], lR);
+        double mid = 0.0; int nb = 0;
+        if (j > 0)     { mid += apertureEnergy(psi, (c[j-1] + c[j]) / 2, lR); ++nb; }
+        if (j < K - 1) { mid += apertureEnergy(psi, (c[j] + c[j+1]) / 2, lR); ++nb; }
+        double midE = (nb ? mid / nb : 1e-300);
+        double contrast = ej / (midE + 1e-300);
+        sumC += contrast;
+        if (contrast > 1.5) ++resolved;                        // Rayleigh-resolved
+      }
+      return std::make_pair((double)resolved / K, sumC / K);
     };
-    auto [accLo, snrLo] = recallAcc(8);
-    auto [accHi, snrHi] = recallAcc(256);
-    std::printf("    K=8  : recall=%5.1f%% signal/floor=%.2f      (below horizon)\n", 100 * accLo, snrLo);
-    std::printf("    K=256: recall=%5.1f%% signal/floor=%.2f      (past horizon)\n", 100 * accHi, snrHi);
-    ++total; pass += report("no capacity horizon: signal does not sink toward the floor",
-                            accLo > 0.99 && accHi < accLo && snrHi < snrLo);
+
+    for (int K : {3, 5, 7, 9, 12, 16, 24, 48}) {
+      auto [rec, ctr] = horizon(K);
+      std::printf("    K=%2d : recall=%5.1f%%  mean peak/midpoint contrast=%.2f  (floor=1.0)\n", K, 100 * rec, ctr);
+    }
+    auto [recLo, ctrLo] = horizon(4);
+    auto [recHi, ctrHi] = horizon(48);
+    ++total; pass += report("no wave capacity horizon: resolution does not collapse with load",
+                            recLo > 0.99 && recHi < 0.4 && ctrHi < 0.5 * ctrLo);
   }
 
   // [8] RADIATION ACCOUNTED, not ignored --------------------------------------
