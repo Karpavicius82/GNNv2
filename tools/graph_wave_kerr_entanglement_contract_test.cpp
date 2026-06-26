@@ -10,7 +10,11 @@
 // HONEST BOUNDARY: this is NOT "forbidden to a unitary". Gate [4] shows a physical
 // UNITARY (flux-CZ, evolved by gw::Stepper) entangles the same product state too.
 // Kerr's real distinction is that its entangling phase is generated from the data
-// (input-adaptive, weights-free), not that a unitary could not do it. No advantage.
+// (input-adaptive, weights-free), not that a unitary could not do it. No QUANTUM
+// advantage here (qubits stay = log2 N; a unitary reaches the same entanglement).
+// This does NOT contradict docs/NONLINEAR_ENGINE.md: that documents the Kerr term's
+// CLASSICAL compute value (a nonlinear reservoir is a universal approximator, a
+// linear one is not) -- a different axis than entanglement / unitary-forbiddenness.
 //
 // One question: does the local nonlinear step entangle, ONLY with both superposition
 // AND nonlinearity, and is the same entanglement reachable by a unitary?
