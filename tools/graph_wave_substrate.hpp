@@ -114,6 +114,7 @@ struct KerrStepper {
 struct SparseBond {
  int a = 0, b = 0;
  double w = 0.0;
+ double phase = 0.0; // gauge flux on this bond; 0 = phaseless (old behavior)
 };
 struct LocalFlowStats {
  long long bond_visits = 0;
@@ -132,6 +133,21 @@ inline void rotateBond(cd& a, cd& b, double theta) {
  const cd ia(0, -s);
  cd na = c * a + ia * b;
  cd nb = c * b + ia * a;
+ a = na;
+ b = nb;
+}
+// Phase-faithful version of the 2-site hop carrying the gauge flux phi. The bond
+// Hamiltonian is H = w(e^{i phi}|a><b| + e^{-i phi}|b><a|); its exact unitary
+// e^{-i theta H} is na = cos(theta) a - i sin(theta) e^{+i phi} b,
+//                  nb = cos(theta) b - i sin(theta) e^{-i phi} a.
+// At phi == 0 this is identical to rotateBond, so phaseless callers are unchanged.
+inline void phaseRotateBond(cd& a, cd& b, double theta, double phi) {
+ const double c = std::cos(theta), s = std::sin(theta);
+ const cd ep = std::exp(cd(0, phi));   // e^{+i phi}
+ const cd em = std::conj(ep);          // e^{-i phi}
+ const cd msi(0, -s);                  // -i sin(theta)
+ cd na = c * a + msi * ep * b;
+ cd nb = c * b + msi * em * a;
  a = na;
  b = nb;
 }
@@ -161,7 +177,7 @@ inline Vec edgeLocalKerrFlow(Vec psi, const std::vector<SparseBond>& bonds,
     stats->max_bond_speed = std::max(stats->max_bond_speed, std::abs(j) / rho);
     stats->bond_visits++;
    }
-   rotateBond(psi[e.a], psi[e.b], 0.5 * dt * w);
+   phaseRotateBond(psi[e.a], psi[e.b], 0.5 * dt * w, e.phase);
   }
   if (g != 0.0) {
    for (auto& v : psi) v *= std::exp(cd(0, -g * std::norm(v) * dt));
@@ -175,7 +191,7 @@ inline Vec edgeLocalKerrFlow(Vec psi, const std::vector<SparseBond>& bonds,
     stats->max_bond_speed = std::max(stats->max_bond_speed, std::abs(j) / rho);
     stats->bond_visits++;
    }
-   rotateBond(psi[e.a], psi[e.b], 0.5 * dt * w);
+   phaseRotateBond(psi[e.a], psi[e.b], 0.5 * dt * w, e.phase);
   }
  }
  return psi;
