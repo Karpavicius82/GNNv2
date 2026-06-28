@@ -39,7 +39,7 @@ nothing is fitted.
 
 | path | contents |
 |---|---|
-| [`tools/`](tools/README.md) | substrate core (`graph_wave_substrate.hpp`) + 59 contract tests (physics, GNN grammar, the working GNN, memory, decision). 32 green at machine precision. |
+| [`tools/`](tools/README.md) | substrate core (`graph_wave_substrate.hpp`) + 60 GNNv2 `*_contract_test` gates (physics, GNN grammar, the working GNN, memory, decision), each an exit-0 machine-precision check, alongside spectral/self-organising diagnostics. (The 61st `*_contract_test` is the GNNv3 RC1 gate, held separate.) |
 | [`research/`](research/README.md) | production studies (scaling engine, decorrelation glue, the Cora benchmark) and honest exploratory probes, including negative results. |
 | [`docs/`](docs/) | architecture, results, the physics-only discipline, the nonlinear engine, and [`GNNv2_HANDOFF.md`](docs/GNNv2_HANDOFF.md) (read first). |
 

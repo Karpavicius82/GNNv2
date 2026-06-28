@@ -72,7 +72,7 @@ high-correlation regime (`probe_whiten`, 1.000 vs 0.48). Source: `research/probe
 
 ## Summary
 
-- 32 substrate / GNN contracts — all green, machine precision.
+- 60 GNNv2 contract gates (substrate / GNN / decorrelation / memory / nonlinear) — all green; the substrate identities hold at machine precision. The GNNv3 RC1 contract is held separate.
 - Engine scales to 10⁶ nodes, exact propagator, gauge-invariant, exact interference.
 - GNN: 100% classification, 99.5% weights-free learning, 77.4% on real Cora.
 - Decorrelation glue closes the correlated-content gap (1.000 where naive gives 0.48).

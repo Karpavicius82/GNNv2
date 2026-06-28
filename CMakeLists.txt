@@ -16,14 +16,17 @@ endforeach()
 # Contracts return exit 0 on full pass, so they ARE the test gates -- register them
 # with ctest (this replaces the old PowerShell runners; C/C++ only). Diagnostics are
 # exploratory (no pass/fail contract) and research probes need data / report metrics,
-# so neither is wired into the default test run.
+# so neither is wired into the default test run. The GNNv3 RC1 contract is held
+# SEPARATE from the GNNv2 suite: it still builds as a target, but it is not a ctest
+# gate here (build/run it directly per docs/GNNv3_RC1_HANDOFF.md).
+set(GNNV3_CONTRACT graph_wave_v3_feeling_gate_contract_test)
 set(NONLINEAR_CONTRACTS
   graph_wave_horizon_densification_contract_test
   graph_wave_streaming_densification_contract_test
   graph_wave_nonlinear_compute_contract_test)
 foreach(src ${CONTRACTS})
   get_filename_component(name ${src} NAME_WE)
-  if(name MATCHES "_contract_test$")
+  if(name MATCHES "_contract_test$" AND NOT name STREQUAL GNNV3_CONTRACT)
     add_test(NAME ${name} COMMAND ${name})
     set_tests_properties(${name} PROPERTIES TIMEOUT 600)
     if(name IN_LIST NONLINEAR_CONTRACTS)

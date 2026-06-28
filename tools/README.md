@@ -1,15 +1,30 @@
 # tools/ — substrate core and contract tests
 
-`graph_wave_substrate.hpp` is the single source of truth for the physics (Hermitian
-graph families, the unitary Cayley stepper, the orthonormal-row kernel, the
-eigensolver). Every other file is a **self-contained contract test**: it builds to a
-standalone executable that prints its own invariants and a `RESULT : n / n verified`
-line. A contract proves one property exactly, at machine precision.
+`graph_wave_substrate.hpp` is the single source of truth for the substrate physics
+(Hermitian graph families, the unitary Cayley stepper, the orthonormal-row kernel,
+the eigensolver). Two further headers carry the nonlinear extensions:
+`graph_wave_nonlinear_engine.hpp` and `qubit_physics.hpp`.
 
-Build any one (Windows / MSVC, Developer prompt):
+The directory holds **76 `.cpp` files**: **61 `*_contract_test`** (60 GNNv2 gates +
+the 1 GNNv3 RC1 contract, held separate), **9 `*_diagnostic_test`** characterisation
+programs, **5** earlier `*_test` programs, and the non-test `absorbing_screen.cpp`. A
+**contract test** builds to a standalone executable that prints its own invariants and
+a `RESULT : n / n verified` line, proving one property exactly at machine precision;
+the **60 GNNv2 contract gates** form the ctest suite (the GNNv3 RC1 contract builds as
+a target but is not wired into the GNNv2 suite).
+
+Build any one directly (Windows / MSVC, Developer prompt):
 
 ```bat
 cl /O2 /EHsc /std:c++20 /I . graph_wave_unitarity_test.cpp && graph_wave_unitarity_test.exe
+```
+
+Or build and run every contract gate with CMake + ctest (C/C++ only, no scripts):
+
+```
+cmake -B build -S .
+cmake --build build
+ctest --test-dir build --output-on-failure
 ```
 
 ## Substrate physics (foundation)

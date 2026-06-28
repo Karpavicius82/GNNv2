@@ -1,8 +1,10 @@
 # research/ — production studies and exploratory probes
 
-Standalone C++20 programs from the build-out of the system. Some include the
-substrate core via `../tools/graph_wave_substrate.hpp`; build from a checkout that
-keeps `tools/` and `research/` siblings.
+**37 standalone C++20 probes** from the build-out of the system (plus the shared
+header `semantic_sparse_text8.hpp`). Some include the substrate core via
+`../tools/graph_wave_substrate.hpp`; build from a checkout that keeps `tools/` and
+`research/` siblings. The tables below are a representative map of the directory, not
+an exhaustive listing.
 
 The first three groups are the **production-verified** results that back the engine,
 the glue, and the real-data benchmark. The last group is the **honest exploratory

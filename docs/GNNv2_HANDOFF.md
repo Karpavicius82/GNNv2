@@ -89,8 +89,9 @@ Windows / MSVC, from a Developer prompt or via CMake:
 ```
 cmake -B build -S .
 cmake --build build
-ctest --test-dir build --output-on-failure     # all *_contract_test gates
+ctest --test-dir build --output-on-failure     # the 60 GNNv2 contract gates
 ctest --test-dir build -L nonlinear            # just the nonlinear suite
+ctest --test-dir build -j 8                     # parallel (the full suite is slow serially)
 ```
 
 Single file:
