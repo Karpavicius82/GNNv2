@@ -85,6 +85,8 @@ matrix-vector products, `O(E)` per term. Same physics, verified against exact
 eigendecomposition; machine-precision unitarity (norm drift `2.2e-16`) at
 **N = 1,000,000 graph nodes in ~0.9 s (≈1.1M nodes/s), linear in N**. This is the path
 from the lab contracts to a global GNN. Source: `research/probe_sparse_scale.cpp`.
+Run (no args; sweeps N to 1M):
+`cl /O2 /EHsc /std:c++20 /I tools research\probe_sparse_scale.cpp && .\probe_sparse_scale.exe`.
 
 **Nonlinear streaming engine — Kerr compression. Unit: TOKENS.**
 A separate engine streams a sequence of **tokens**; each token event grows a plastic
@@ -94,6 +96,8 @@ graph and evolves a local 2-hop field with Kerr nonlinearity
 is **≈42,000 tokens/s** (1,000,000 tokens in ~24 s, the graph growing to ~143,000
 nodes, ~0.8 GB). Source: `research/probe_streaming_compression.cpp`,
 `tools/graph_wave_nonlinear_engine.hpp`. See `docs/NONLINEAR_ENGINE.md`.
+Run (1M tokens; arg = stream length):
+`cl /O2 /EHsc /std:c++20 /I tools research\probe_streaming_compression.cpp && .\probe_streaming_compression.exe 1000000`.
 
 The two never mix: 1,000,000 **nodes** = the linear engine; 1,000,000 **tokens** = the
 nonlinear engine; **nodes/s ≠ tokens/s**. When any doc says "the engine", it must say

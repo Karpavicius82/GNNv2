@@ -51,6 +51,16 @@ distinct engines that must never be conflated** (canonical: `ARCHITECTURE.md` §
 `nodes/s ≠ tokens/s`: 1,000,000 **nodes** = the linear engine; 1,000,000 **tokens** =
 the nonlinear engine. The ≈3× compression belongs to the nonlinear **token** engine.
 
+Run them (Windows / MSVC, from the repo root):
+
+```
+:: LINEAR engine (nodes) -- no args, sweeps N to 1,000,000 nodes:
+cl /O2 /EHsc /std:c++20 /I tools research\probe_sparse_scale.cpp && .\probe_sparse_scale.exe
+
+:: NONLINEAR engine (tokens) -- arg = stream length, here 1,000,000 tokens:
+cl /O2 /EHsc /std:c++20 /I tools research\probe_streaming_compression.cpp && .\probe_streaming_compression.exe 1000000
+```
+
 - **Flow** — unitary propagation `z_i ← Σ_j e^{i·δ_ij} z_j`; the edge flux `δ_ij` is
   the structure (no weights). Depth is `U^k`. See `ARCHITECTURE.md`.
 - **Decorrelation** — separates correlated patterns so content is addressable; this
@@ -112,7 +122,7 @@ ctest --test-dir build -j 8                     # parallel (the full suite is sl
 Single file:
 
 ```
-cl /O2 /EHsc /std:c++20 /I tools tools\graph_wave_unitarity_test.cpp && graph_wave_unitarity_test.exe
+cl /O2 /EHsc /std:c++20 /I tools tools\graph_wave_unitarity_test.cpp && .\graph_wave_unitarity_test.exe
 ```
 
 Each `*_contract_test` returns exit 0 only on a full pass. Diagnostics

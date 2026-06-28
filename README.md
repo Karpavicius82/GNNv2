@@ -49,8 +49,8 @@ nothing is fitted.
 Each file is standalone C++20. From a Developer prompt:
 
 ```bat
-cl /O2 /EHsc /std:c++20 /I tools tools\graph_wave_unitarity_test.cpp && graph_wave_unitarity_test.exe
-cl /O2 /EHsc /std:c++20 /I tools research\probe_sparse_scale.cpp       && probe_sparse_scale.exe
+cl /O2 /EHsc /std:c++20 /I tools tools\graph_wave_unitarity_test.cpp && .\graph_wave_unitarity_test.exe
+cl /O2 /EHsc /std:c++20 /I tools research\probe_sparse_scale.cpp       && .\probe_sparse_scale.exe
 ```
 
 Build everything and run the contract gates with CMake + ctest (C/C++ only, no
@@ -64,6 +64,21 @@ ctest --test-dir build -L nonlinear               # just the nonlinear suite
 ```
 
 Each `*_contract_test` returns exit 0 only on a full pass, so ctest is the suite.
+
+### Run the two engines (no guessing)
+
+GNNv2 has **two separate engines** (see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §4).
+Here is exactly where each lives and how to run it:
+
+| engine | file | run it (1M) | it prints |
+|---|---|---|---|
+| **linear** — graph propagation, unit **NODES** | `research/probe_sparse_scale.cpp` | `cl /O2 /EHsc /std:c++20 /I tools research\probe_sparse_scale.cpp && .\probe_sparse_scale.exe` | a sweep up to **N = 1,000,000 nodes**: norm drift, neighbour overlap, ms → **≈1.1M nodes/s** |
+| **nonlinear** — Kerr streaming, unit **TOKENS** | `research/probe_streaming_compression.cpp` | `cl /O2 /EHsc /std:c++20 /I tools research\probe_streaming_compression.cpp && .\probe_streaming_compression.exe 1000000` | `stream`, `nodes`, `compression`, `REAL/RANDOM`, **`tokens_per_sec`** at **1,000,000 tokens** → **≈42k tokens/s**; exits 0 only if the contract passes |
+
+Notes:
+- `probe_sparse_scale` takes **no arguments** — it sweeps N internally to 1,000,000 nodes. Speed = nodes ÷ ms.
+- The streaming probe takes `[stream_tokens] [uniqueEvery]` (default `60000 7`); pass `1000000` to stream 1M tokens. The closed nonlinear engine `research/probe_nonlinear_engine.cpp` runs the same way: `… && .\probe_nonlinear_engine.exe 1000000`.
+- **`1,000,000 nodes` is the linear engine; `1,000,000 tokens` is the nonlinear engine. `nodes/s ≠ tokens/s`.**
 
 ## Principle
 
