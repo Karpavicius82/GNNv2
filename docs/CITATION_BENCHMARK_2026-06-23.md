@@ -9,29 +9,42 @@ dataset files in the ignored `data/` directory. Generated binaries, downloaded
 datasets, and temporary source files were intentionally left under ignored
 paths and were not staged.
 
+## Refresh — 2026-06-28
+
+Re-verified against commit `20197c14` (current HEAD): the 30-seed citation
+benchmark in this report reproduces **identically** (Cora FLOW 2-hop 79.00 ± 1.23,
+CiteSeer 70.30 ± 1.14, PubMed 73.59 ± 2.35). The benchmark is deterministic
+(`std::mt19937` seeds) and its harness is unchanged, so the method, numbers, and
+interpretation below stand. Only the repository-state inventory is refreshed here.
+
 ## Repository State
 
+Current tree (refreshed 2026-06-28):
+
 ```text
-HEAD: 0bec6e43b5f19cda60e00ca05dae93d1c94f9e30
+HEAD: 20197c14f5b08a5f4d095736ce9c79661f9753cb
 branch: main
-remote: origin/main
-status before report: clean
-commit subject: Clean documentation, remove V26 references, organize tests
+commit subject: GNNv2 docs: correct counts to ground truth; hold GNNv3 separate in ctest
 ```
 
-Tracked source inventory at the time:
+Tracked source inventory (current):
 
 ```text
-tools/*.cpp:     59
-tools/*.hpp:      1
-research/*.cpp:  21
-docs/*.md:        2
+tools/*.cpp:     76   (61 *_contract_test = 60 GNNv2 gates + 1 GNNv3 RC1 held separate;
+                       + 9 *_diagnostic_test + 5 other *_test + 1 non-test)
+tools/*.hpp:      3
+research/*.cpp:  37
+docs/*.md:       12
 ```
+
+The original audit below was taken at commit `0bec6e43` ("Clean documentation,
+remove V26 references, organize tests"), when the tree held 59 `tools/*.cpp` and
+21 `research/*.cpp`.
 
 ## Existing Contract Test Result
 
-The existing `tools/*.cpp` contract executables were built and run from the
-current checkout.
+At the original audit the `tools/*.cpp` contract executables were built and run
+from the checkout (all green):
 
 ```text
 PASS=59
@@ -39,6 +52,10 @@ FAIL=0
 TOTAL=59
 runtime_ms=169836
 ```
+
+The suite is now **60 GNNv2 `*_contract_test` gates** (the GNNv3 RC1 contract is
+held separate), run with `ctest --test-dir build --output-on-failure`. The selected
+invariant outputs below are unchanged.
 
 Selected existing contract outputs:
 
