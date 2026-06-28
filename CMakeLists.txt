@@ -3,11 +3,37 @@ project(GNNv2 CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include_directories(${CMAKE_SOURCE_DIR}/tools)
+enable_testing()
 
-# every contract in tools/ and every research probe builds as a standalone executable
+# Every contract in tools/ and every research probe builds as a standalone executable.
 file(GLOB CONTRACTS CONFIGURE_DEPENDS tools/*.cpp)
 file(GLOB PROBES    CONFIGURE_DEPENDS research/*.cpp)
 foreach(src ${CONTRACTS} ${PROBES})
   get_filename_component(name ${src} NAME_WE)
   add_executable(${name} ${src})
 endforeach()
+
+# Contracts return exit 0 on full pass, so they ARE the test gates -- register them
+# with ctest (this replaces the old PowerShell runners; C/C++ only). Diagnostics are
+# exploratory (no pass/fail contract) and research probes need data / report metrics,
+# so neither is wired into the default test run.
+set(NONLINEAR_CONTRACTS
+  graph_wave_horizon_densification_contract_test
+  graph_wave_streaming_densification_contract_test
+  graph_wave_nonlinear_compute_contract_test)
+foreach(src ${CONTRACTS})
+  get_filename_component(name ${src} NAME_WE)
+  if(name MATCHES "_contract_test$")
+    add_test(NAME ${name} COMMAND ${name})
+    set_tests_properties(${name} PROPERTIES TIMEOUT 600)
+    if(name IN_LIST NONLINEAR_CONTRACTS)
+      set_tests_properties(${name} PROPERTIES LABELS nonlinear)
+    endif()
+  endif()
+endforeach()
+
+# Usage:
+#   cmake -B build -S .            configure
+#   cmake --build build           build every contract + probe
+#   ctest --test-dir build --output-on-failure        run all contract gates
+#   ctest --test-dir build -L nonlinear               run only the nonlinear suite

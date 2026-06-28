@@ -41,8 +41,7 @@ nothing is fitted.
 |---|---|
 | [`tools/`](tools/README.md) | substrate core (`graph_wave_substrate.hpp`) + 59 contract tests (physics, GNN grammar, the working GNN, memory, decision). 32 green at machine precision. |
 | [`research/`](research/README.md) | production studies (scaling engine, decorrelation glue, the Cora benchmark) and honest exploratory probes, including negative results. |
-| [`docs/`](docs/) | `ARCHITECTURE.md`, `RESULTS.md`. |
-| `scripts/` | `run_tests.ps1` — build and run every contract, print a pass/fail summary. |
+| [`docs/`](docs/) | architecture, results, the physics-only discipline, the nonlinear engine, and [`GNNv2_HANDOFF.md`](docs/GNNv2_HANDOFF.md) (read first). |
 
 ## Build & run (Windows / MSVC)
 
@@ -53,17 +52,17 @@ cl /O2 /EHsc /std:c++20 /I tools tools\graph_wave_unitarity_test.cpp && graph_wa
 cl /O2 /EHsc /std:c++20 /I tools research\probe_sparse_scale.cpp       && probe_sparse_scale.exe
 ```
 
-Run the whole contract suite:
+Build everything and run the contract gates with CMake + ctest (C/C++ only, no
+scripts):
 
 ```
-powershell -ExecutionPolicy Bypass -File scripts\run_tests.ps1
+cmake -B build -S .
+cmake --build build
+ctest --test-dir build --output-on-failure        # all contract gates
+ctest --test-dir build -L nonlinear               # just the nonlinear suite
 ```
 
-CMake (builds every contract and probe as a target) is also provided:
-
-```
-cmake -B build -S . && cmake --build build
-```
+Each `*_contract_test` returns exit 0 only on a full pass, so ctest is the suite.
 
 ## Principle
 
