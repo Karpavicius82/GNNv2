@@ -114,5 +114,6 @@ int main(int argc, char** argv) {
   ++t; p += gate("tau senses structure (structured >> random)", st.meanTau() > 5.0 * rnd.stats().meanTau());
   ++t; p += gate("field bounded (no blowup)", st.maxRho < 60.0);
   std::printf("\n  CLOSURE : %d / %d physics gates\n", p, t);
+  std::printf("  RESULT : %d / %d\n", p, t);
   return p == t ? 0 : 1;
 }
