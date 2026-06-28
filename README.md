@@ -27,7 +27,8 @@ structure. Full description in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 | | |
 |---|---|
 | substrate physics | unitarity 1.2e-15, gauge/Wilson 4.4e-16, destructive interference 5.6e-31 |
-| engine | **1,000,000 nodes**, unitary 2.2e-16, linear time; propagator exact at any t (1e-12) |
+| linear engine (nodes) | **1,000,000 nodes**, ~1.1M nodes/s, unitary 2.2e-16, linear time; propagator exact at any t (1e-12) |
+| nonlinear engine (tokens) | **1,000,000 tokens**, ~42k tokens/s (graph grows to ~143k nodes), ~3× Kerr compression, recognition 100% real vs 31% random |
 | GNN | classification **100%**, weights-free learning **99.5%** on unseen (shuffle 52%) |
 | decorrelation glue | routing **1.000** where naive collapses to 0.48 |
 | **real data (Cora)** | **77.4%** weights-free — beats label-prop (~68%), nears trained GCN (~81.5%) |

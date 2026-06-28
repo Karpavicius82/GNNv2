@@ -10,7 +10,7 @@ Every cheap shortcut we tried **loses the function**, verified live:
 | approach | per-token cost | recognition |
 |---|---|---|
 | per-token Kerr field (accumulated) | light-cone field evolve | **100%** |
-| lazy Kerr readout (single-shot) | none (read at end) | 31% (chance) |
+| lazy Kerr readout (single-shot) | none (read at end) | 31% (~chance) |
 | one shared global field | local evolve | 31% |
 | phase on the edges (flux) | plasticity | 31% |
 | raw graph neighbours (1/2-hop) | plasticity | 33–35% |
@@ -45,10 +45,10 @@ properties the field had, without the light-cone evolve.
 ## Results (`research/probe_hdc_stream.cpp`, live)
 
 ```
-HDC D=256, stream = 2,000,000
-  tok/s = ~460k                          (~10x the per-token Kerr field's ~47k)
+HDC D=256, stream = 2,000,000 tokens
+  tok/s = ~460k                          (~10x the per-token Kerr field's ~47k tok/s)
   recognition REAL   = 100.0%            (matches the heavy per-token Kerr stream)
-  recognition RANDOM = 31.2%  (chance)   (topic-shuffled control: structure, not the
+  recognition RANDOM = 31.2%  (~chance)  (topic-shuffled control: structure, not the
                                           hypervectors, carries the signal)
   gate: REAL must beat RANDOM by > 30 pp -> PASS
 ```

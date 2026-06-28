@@ -14,11 +14,14 @@ Substrate results are exact finite-N identities at machine precision.
 | Landau-gauge plaquette flux error | 0 |
 | interferometer routing | flux = 0 → out+ 0.99999, flux = π → out− 0.99999 |
 
-## Production engine — sparse unitary propagation
+## Linear scaling engine — sparse unitary propagation (unit: NODES)
+
+This is the graph-propagation engine: sparse Chebyshev evolution of `e^{-iHt}` over
+GRAPH NODES, `O(E)` per term. Input and throughput are in **nodes** (`nodes/s`).
 
 | quantity | value |
 |---|---|
-| scale | **N = 1,000,000 nodes**, ~1 s, **linear time** (Chebyshev, 23 terms) |
+| scale | **N = 1,000,000 nodes**, ~1 s (~1.1M nodes/s), **linear time** (Chebyshev, 23 terms) |
 | unitarity at scale (norm drift) | **2.22e-16** |
 | propagator exact at any t (vs exact eigendecomposition) | 1.13e-12 @t1, 1.26e-12 @t5, 1.8e-12 @t20 |
 | gauge invariance of the engine | \|ψ\|² unchanged under local gauge = 6.9e-17 |
@@ -26,6 +29,26 @@ Substrate results are exact finite-N identities at machine precision.
 
 Source: `research/probe_sparse_scale.cpp`, `research/probe_physics.cpp`,
 `research/probe_crosscheck.cpp`.
+
+## Nonlinear streaming / compression engine — Kerr (unit: TOKENS)
+
+A **separate** engine, not the one above. It streams a sequence of **tokens**; each
+token event grows a plastic graph and evolves a local 2-hop Kerr field
+`iψ̇ = −Hψ − g|ψ|²ψ`. Its input and throughput are in **tokens** (`tokens/s`); the
+~143k-node graph it builds is a by-product of the stream, not its input — `nodes/s`
+does not apply here.
+
+| quantity | value |
+|---|---|
+| scale | **1,000,000 tokens**, ~24 s (**~42,000 tokens/s**) |
+| graph grown (by-product of the stream) | ~142,930 nodes |
+| compression | **~3.1×** (horizon PR linear 6.58 / nonlinear 2.12) |
+| recognition | REAL **100%** vs RANDOM 30.6% |
+| peak RAM | 793 MB |
+
+Source: `research/probe_streaming_compression.cpp`,
+`tools/graph_wave_nonlinear_engine.hpp`, `research/probe_nonlinear_engine.cpp`.
+See `docs/NONLINEAR_ENGINE.md`.
 
 ## The GNN
 
@@ -73,6 +96,7 @@ high-correlation regime (`probe_whiten`, 1.000 vs 0.48). Source: `research/probe
 ## Summary
 
 - 60 GNNv2 contract gates (substrate / GNN / decorrelation / memory / nonlinear) — all green; the substrate identities hold at machine precision. The GNNv3 RC1 contract is held separate.
-- Engine scales to 10⁶ nodes, exact propagator, gauge-invariant, exact interference.
+- Linear engine (NODES) scales to 10⁶ nodes, exact propagator, gauge-invariant, exact interference.
+- Nonlinear streaming engine (TOKENS) streams 10⁶ tokens at ~42k tokens/s, ~3× Kerr compression, 100% recognition (vs 31% random) — a separate engine; nodes/s ≠ tokens/s.
 - GNN: 100% classification, 99.5% weights-free learning, 77.4% on real Cora.
 - Decorrelation glue closes the correlated-content gap (1.000 where naive gives 0.48).

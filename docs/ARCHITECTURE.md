@@ -73,13 +73,31 @@ stream:
 The flux gates (`flux = 0` transmits, `flux = π` blocks exactly) are not a separate
 mechanism — they are the exact dark fringes of the same interference field.
 
-## 4. Production engine
+## 4. Two engines (never conflate)
 
-The contracts run on small dense systems for exactness. At scale the dense Cayley
-step (`O(N³)`) is replaced by a **sparse Chebyshev expansion of `e^{-iHt}`** — only
-sparse matrix-vector products, `O(E)` per term. This is the same physics, verified
-against exact eigendecomposition, and it holds machine-precision unitarity at one
-million nodes in linear time. See `docs/RESULTS.md`.
+GNNv2 ships **two distinct production engines**. They operate on different objects and
+are measured in different units — keep them separate.
+
+**Linear scaling engine — graph propagation. Unit: NODES.**
+The contracts run on small dense systems for exactness. At scale the dense Cayley step
+(`O(N³)`) is replaced by a **sparse Chebyshev expansion of `e^{-iHt}`** — only sparse
+matrix-vector products, `O(E)` per term. Same physics, verified against exact
+eigendecomposition; machine-precision unitarity (norm drift `2.2e-16`) at
+**N = 1,000,000 graph nodes in ~0.9 s (≈1.1M nodes/s), linear in N**. This is the path
+from the lab contracts to a global GNN. Source: `research/probe_sparse_scale.cpp`.
+
+**Nonlinear streaming engine — Kerr compression. Unit: TOKENS.**
+A separate engine streams a sequence of **tokens**; each token event grows a plastic
+graph and evolves a local 2-hop field with Kerr nonlinearity
+`i ψ̇ = −H ψ − g|ψ|²ψ`. It concentrates energy (**≈3× compression** vs the linear
+`g = 0` baseline) while preserving recognition (REAL 100% vs RANDOM ≈31%). Throughput
+is **≈42,000 tokens/s** (1,000,000 tokens in ~24 s, the graph growing to ~143,000
+nodes, ~0.8 GB). Source: `research/probe_streaming_compression.cpp`,
+`tools/graph_wave_nonlinear_engine.hpp`. See `docs/NONLINEAR_ENGINE.md`.
+
+The two never mix: 1,000,000 **nodes** = the linear engine; 1,000,000 **tokens** = the
+nonlinear engine; **nodes/s ≠ tokens/s**. When any doc says "the engine", it must say
+WHICH. Numbers in `docs/RESULTS.md` and `docs/NONLINEAR_ENGINE.md`.
 
 ## 5. Discipline
 

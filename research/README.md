@@ -6,17 +6,30 @@ header `semantic_sparse_text8.hpp`). Some include the substrate core via
 `research/` siblings. The tables below are a representative map of the directory, not
 an exhaustive listing.
 
-The first three groups are the **production-verified** results that back the engine,
-the glue, and the real-data benchmark. The last group is the **honest exploratory
-record** — including probes that failed or were superseded. Negative results are
-kept on purpose; they mark the dead-ends so they are not re-walked.
+The first four groups are the **production-verified** results that back the **two
+engines** (linear scaling + nonlinear streaming), the glue, and the real-data
+benchmark. The last group is the **honest exploratory record** — including probes
+that failed or were superseded. Negative results are kept on purpose; they mark the
+dead-ends so they are not re-walked.
 
-## Production engine (verified)
+GNNv2 ships **two distinct engines measured in different units — never conflate them**
+(canonical: `docs/ARCHITECTURE.md` §4). The **linear scaling engine** propagates over
+graph **NODES** (throughput in nodes/s); the **nonlinear streaming engine** streams
+**TOKENS** (throughput in tokens/s). `1,000,000 nodes` = linear; `1,000,000 tokens` =
+nonlinear; **nodes/s ≠ tokens/s**.
+
+## Linear scaling engine — graph propagation, unit: NODES (verified)
 | file | result |
 |---|---|
-| `probe_sparse_scale` | sparse unitary propagation, 1,000,000 nodes, norm drift 2.22e-16, linear time |
+| `probe_sparse_scale` | sparse unitary propagation, **1,000,000 graph nodes**, norm drift 2.22e-16, linear time (linear engine; throughput in nodes/s) |
 | `probe_physics` | propagator exact at any t (1e-12 vs exact eig), gauge-invariant 6.9e-17, flux=π 4.95e-16 |
 | `probe_crosscheck` | sparse Chebyshev engine vs exact eigendecomposition: 1.13e-12 |
+
+## Nonlinear streaming engine — Kerr compression, unit: TOKENS (verified)
+| file | result |
+|---|---|
+| `probe_streaming_compression` | streams **TOKENS** into a plastic graph + local 2-hop Kerr field; ≈3× compression vs the linear `g=0` baseline, REAL 100% / RANDOM ≈31%; throughput in **tokens/s** (the graph grows to ~143k nodes, but its input/throughput are TOKENS — never nodes/s). See `docs/ARCHITECTURE.md` §4, `docs/NONLINEAR_ENGINE.md` |
+| `probe_nonlinear_engine` | driver for the closed Kerr engine (`tools/graph_wave_nonlinear_engine.hpp`): psi/chi densification + tau structure-sensing over the same **TOKEN** stream |
 
 ## Decorrelation glue (verified)
 | file | result |

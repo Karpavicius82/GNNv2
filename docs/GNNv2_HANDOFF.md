@@ -36,6 +36,21 @@ the two. GNNv3 lives only in `tools/graph_wave_v3_feeling_gate_contract_test.cpp
 
 ## Substrate Roles
 
+These roles are substrate primitives. In production they are packaged into **two
+distinct engines that must never be conflated** (canonical: `ARCHITECTURE.md` §4):
+
+- **Linear scaling engine** — graph propagation, **unit = NODES**. Sparse unitary
+  Chebyshev `e^{-iHt}` over graph nodes: ~1,000,000 **nodes** in ~0.9 s (≈1.1M
+  **nodes/s**), linear in N, norm drift ~2e-16. Source `research/probe_sparse_scale.cpp`.
+- **Nonlinear streaming engine** — Kerr compression, **unit = TOKENS**. Streams a
+  sequence of **tokens**; each token grows a plastic graph and evolves a local 2-hop
+  Kerr field: ~42,000 **tokens/s** (1,000,000 **tokens** in ~24 s, graph growing to
+  ~143,000 nodes, ~0.8 GB), **≈3× compression** (REAL 100% vs RANDOM ≈31%). Source
+  `research/probe_streaming_compression.cpp`, `tools/graph_wave_nonlinear_engine.hpp`.
+
+`nodes/s ≠ tokens/s`: 1,000,000 **nodes** = the linear engine; 1,000,000 **tokens** =
+the nonlinear engine. The ≈3× compression belongs to the nonlinear **token** engine.
+
 - **Flow** — unitary propagation `z_i ← Σ_j e^{i·δ_ij} z_j`; the edge flux `δ_ij` is
   the structure (no weights). Depth is `U^k`. See `ARCHITECTURE.md`.
 - **Decorrelation** — separates correlated patterns so content is addressable; this
@@ -43,7 +58,7 @@ the two. GNNv3 lives only in `tools/graph_wave_v3_feeling_gate_contract_test.cpp
 - **Settling / memory** — dissipative relaxation, holographic recall, amplitude
   amplification.
 - **Nonlinear (Kerr) pressure** — `i ψ̇ = -H ψ - g|ψ|²ψ`, split-step DNLS. Energy
-  densifies (compression ≈ 3x); a horizon is a detector over the already-evolved
+  densifies (compression ≈ 3x on the **token** stream); a horizon is a detector over the already-evolved
   field, not a separate operation. Solitonic: stored energy stays localized under
   field noise (it does not disperse; it also does not reconstruct identity — measure
   by participation ratio, not template overlap). See `NONLINEAR_ENGINE.md`.
@@ -52,7 +67,7 @@ the two. GNNv3 lives only in `tools/graph_wave_v3_feeling_gate_contract_test.cpp
 
 1. Phase substrate — weights-free flow, gauge/Wilson flux, interference, superposition
    at machine precision (`RESULTS.md`).
-2. Nonlinear compression / horizon — Kerr densification, ≈3x streaming compression.
+2. Nonlinear compression / horizon — Kerr densification, ≈3x token-stream compression.
    Data excites the system, but energy is what densifies.
 3. Bridges and Wilson flux — a bare edge phase is almost invisible without loops;
    local plaquettes matter because Wilson flux is gauge-visible.

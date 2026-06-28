@@ -34,7 +34,10 @@ The true propagator `e^{-iHt}` is causal. The sparse **Chebyshev** engine is a
 polynomial of `H`, so term `H^k` reaches exactly `k` hops — strictly causal by
 construction. A single large **Cayley** step uses `(I+iK)^{-1}` (a matrix inverse =
 non-local), so it leaks instantly to far nodes — it is *not* a faithful wave. Use
-fine Cayley steps or Chebyshev. The production engine is Chebyshev, so it is causal.
+fine Cayley steps or Chebyshev. The production *propagation* engine — the linear,
+node-scaled `e^{-iHt}` sparse-Chebyshev engine that walks over graph nodes (distinct
+from the separate nonlinear Kerr token-streaming engine) — is Chebyshev, so it is
+causal.
 
 ## Energy completeness — and what it corrects
 
