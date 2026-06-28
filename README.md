@@ -78,11 +78,13 @@ This repository now also contains the GNNv3 RC1 research checkpoint:
 
 - `tools/graph_wave_v3_feeling_gate_contract_test.cpp`
 - `docs/GNNv3_RC1_REPORT.md`
+- `docs/GNNv3_RC1_HANDOFF.md`
 
 GNNv3 RC1 tests a self-sensing carrier-field substrate where `chi/tau` narrows
-the active physics window. The main gate is C++ only, uses no trigonometric
-readout in the gate, and includes a signed-current/stress audit to detect phase
-clipping.
+the active physics window. The main gate is C++ only, physics-only, uses no
+trigonometric readout in the gate, and includes a signed-current/stress audit to
+detect phase clipping. Project discipline for RC1: no Python/JS/notebook side
+systems for core work, no SQL/database framing, no hidden negative results.
 
 Latest 1M RC1 result:
 
@@ -96,4 +98,4 @@ adaptive feeling-gated:
 ```
 
 See `docs/GNNv3_RC1_REPORT.md` for commands, test matrix, negative results, and
-architecture notes.
+architecture notes. Read `docs/GNNv3_RC1_HANDOFF.md` before continuing research.

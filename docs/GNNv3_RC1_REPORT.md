@@ -13,6 +13,16 @@ substrate. It is not a trainer and not a SQL/feature pipeline. The core idea is:
 - The system uses `chi/tau` to choose where the expensive local physics should
   run.
 
+Discipline:
+
+- C/C++ only for executable project logic and tests.
+- Physics-only framing.
+- No SQL/database view.
+- No Python/JS/notebook side systems for core project work.
+- No trigonometric gate/readout in the GNNv3 RC1 carrier gate.
+- No half-wave phase clipping.
+- Keep negative results visible.
+
 The main RC1 result is the no-trigonometric carrier-field gate:
 
 `tools/graph_wave_v3_feeling_gate_contract_test.cpp`
@@ -54,7 +64,7 @@ interactions by about 36.9%, and does not one-sidedly clip signed phase current.
 - `tools/graph_wave_v3_feeling_gate_contract_test.cpp`
   - GNNv3 RC1 candidate.
   - Carrier-field phase representation.
-  - Adaptive `aperture` gate from local feeling activity.
+  - Adaptive `aperture` gate from fresh local feeling activity.
   - Formal phase audit for signed current/stress clipping.
 
 - `tools/graph_wave_synchronous_phase_field_contract_test.cpp`
@@ -102,7 +112,7 @@ build\tmp_bridge\probe_nonlinear_engine.exe 60000
 | Test | Stream | Result | Notes |
 |---|---:|---|---|
 | `graph_wave_v3_feeling_gate_contract_test.cpp` | 60k | PASS 8/8 | adaptive carrier gate, no trig |
-| `graph_wave_v3_feeling_gate_contract_test.cpp` | 1M | PASS 8/8 | active pairs 0.631 |
+| `graph_wave_v3_feeling_gate_contract_test.cpp` | 1M | PASS 8/8 | active pairs 0.631, skipped current bias 0.008 |
 | `graph_wave_synchronous_phase_field_contract_test.cpp` | 60k | PASS 5/5 | sync error 0 |
 | `graph_wave_synchronous_phase_field_contract_test.cpp` | 1M | PASS 5/5 | `psi=2.97x`, `chi=3.61x` in prior run |
 | `graph_wave_dual_feeling_substrate_contract_test.cpp` | 60k | PASS 5/5 | `chi` readout 100% in prior run |
@@ -136,3 +146,6 @@ The strongest GNNv3 direction is:
 - keep failed probes visible rather than tuning them into fake wins.
 
 RC1 is ready as a research checkpoint, not a final production architecture.
+
+For session-to-session continuity, read `docs/GNNv3_RC1_HANDOFF.md` before
+changing the substrate.
