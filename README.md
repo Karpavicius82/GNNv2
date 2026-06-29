@@ -44,49 +44,67 @@ nothing is fitted.
 | [`research/`](research/README.md) | production studies (scaling engine, decorrelation glue, the Cora benchmark) and honest exploratory probes, including negative results. |
 | [`docs/`](docs/) | architecture, results, the physics-only discipline, the nonlinear engine, the [`PERFORMANCE.md`](docs/PERFORMANCE.md) speed ladder (engines, units, the three token regimes), and [`GNNv2_HANDOFF.md`](docs/GNNv2_HANDOFF.md) (read first). |
 
-## Build & run (Windows / MSVC)
+## Build, test & reproduce
 
-Each file is standalone C++20. From a Developer prompt:
+**Prerequisites:** a C++20 compiler — on Windows an MSVC *Developer* prompt (`cl`);
+CMake ≥ 3.20 works on any platform. Everything is C/C++; there are no Python,
+PowerShell, or other side systems, and no data is bundled (Cora is fetched into the
+git-ignored `data/`).
 
-```bat
-cl /O2 /EHsc /std:c++20 /I tools tools\graph_wave_unitarity_test.cpp && .\graph_wave_unitarity_test.exe
-cl /O2 /EHsc /std:c++20 /I tools research\probe_sparse_scale.cpp       && .\probe_sparse_scale.exe
-```
-
-Build everything and run the contract gates with CMake + ctest (C/C++ only, no
-scripts):
+### One command — the full contract suite (start here)
 
 ```
 cmake -B build -S .
 cmake --build build
-ctest --test-dir build --output-on-failure        # all contract gates
-ctest --test-dir build -L nonlinear               # just the nonlinear suite
+ctest --test-dir build --output-on-failure      # the 60 GNNv2 contract gates
+ctest --test-dir build -L nonlinear              # just the nonlinear suite
+ctest --test-dir build -j 8                       # parallel (full suite is slow serially)
 ```
 
-Each `*_contract_test` returns exit 0 only on a full pass, so ctest is the suite.
+Every `*_contract_test` returns exit 0 **only** on a full pass, so a green `ctest`
+**is** the proof — no extra interpretation needed. (Diagnostics `*_diagnostic_test`
+and research probes are not ctest gates; run them directly, below.)
 
-### Run the two engines (no guessing)
+### Reproduce any headline result — what · why · how · expected
 
-GNNv2 has **two separate engines** (see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §4).
-Here is exactly where each lives and how to run it:
+Standalone single-file builds, from the repo root in a Developer prompt. Each prints
+its own metrics and a `RESULT`/exit code; the expected values are stated so nothing
+has to be re-derived.
 
-| engine | file | run it (1M) | it prints |
+| what | why it exists | command | expected |
 |---|---|---|---|
-| **linear** — graph propagation, unit **NODES** | `research/probe_sparse_scale.cpp` | `cl /O2 /EHsc /std:c++20 /I tools research\probe_sparse_scale.cpp && .\probe_sparse_scale.exe` | a sweep up to **N = 1,000,000 nodes**: norm drift, neighbour overlap, ms → **≈1.1M nodes/s** |
-| **nonlinear** — Kerr streaming, unit **TOKENS** | `research/probe_streaming_compression.cpp` | `cl /O2 /EHsc /std:c++20 /I tools research\probe_streaming_compression.cpp && .\probe_streaming_compression.exe 1000000` | `stream`, `nodes`, `compression`, `REAL/RANDOM`, **`tokens_per_sec`** at **1,000,000 tokens** → **≈42k tokens/s**; exits 0 only if the contract passes |
+| **substrate physics** | exact unitarity, interference, gauge flux at machine precision | `cl /O2 /EHsc /std:c++20 /I tools tools\graph_wave_unitarity_test.cpp && .\graph_wave_unitarity_test.exe` | `5/5`; norm drift ~1e-13, destructive interference 5.6e-31 |
+| **node-scaling engine** · unit **NODES** | the global GNN engine: stays unitary + linear-time at 10⁶ nodes | `cl /O2 /EHsc /std:c++20 /I tools research\probe_sparse_scale.cpp && .\probe_sparse_scale.exe` | `N=1,000,000` nodes, drift 2.22e-16, **~1.1–2M nodes/s** |
+| **linear field stream** · unit **TOKENS** (g=0) | streaming baseline: recognition with the nonlinearity OFF | `cl /O2 /EHsc /std:c++20 /I tools research\probe_linear_stream.cpp && .\probe_linear_stream.exe 1000000` | PR avg ~3.85, **value_LINEAR 100%**, ~150–185k tok/s, `RESULT PASS` |
+| **nonlinear Kerr stream** · unit **TOKENS** (g=7) | the production recognition + compression engine | `cl /O2 /EHsc /std:c++20 /I tools research\probe_streaming_compression.cpp && .\probe_streaming_compression.exe 1000000` | **~3× compression**, REAL 100% / RANDOM ~31%, ~85–90k tok/s, exit 0 |
+| **real data — Cora** · unit **NODES** | weights-free GNN on a real citation graph | place LINQS data so `cora/cora.content` + `cora/cora.cites` sit under `data/`, then build and run **from `data/`** (the probe opens `cora/...` relative to the working dir): `cl /O2 /EHsc /std:c++20 /I tools research\probe_cora.cpp && pushd data && ..\probe_cora.exe && popd` | own 58.3%, FLOW 1-hop 74.6%, **FLOW 2-hop 77.4%** |
 
 Notes:
-- `probe_sparse_scale` takes **no arguments** — it sweeps N internally to 1,000,000 nodes. Speed = nodes ÷ ms.
-- The streaming probe takes `[stream_tokens] [uniqueEvery]` (default `60000 7`); pass `1000000` to stream 1M tokens. The closed nonlinear engine `research/probe_nonlinear_engine.cpp` runs the same way: `… && .\probe_nonlinear_engine.exe 1000000`.
-- **`1,000,000 nodes` is the linear engine; `1,000,000 tokens` is the nonlinear engine. `nodes/s ≠ tokens/s`.**
-- For the full speed ladder — the node engine (nodes/s) plus the three token regimes (graph-stream-only ~1.2–1.4M, realistic linear field ~150–185k, nonlinear Kerr ~85–90k tok/s) and exactly where the cost goes — see [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+- `probe_sparse_scale` takes **no arguments** (sweeps N to 1,000,000 nodes). Streaming
+  probes take `[stream_tokens] [uniqueEvery]` (default `60000 7`) — pass `1000000` for
+  the 1M-token run. The closed Kerr engine `research/probe_nonlinear_engine.cpp` runs
+  the same way: `… && .\probe_nonlinear_engine.exe 1000000`.
+- **Never conflate the two engines:** `1,000,000 nodes` (node engine) ≠ `1,000,000
+  tokens` (streaming engine); `nodes/s ≠ tokens/s`. Absolute throughput is
+  host-dependent — the full **speed ladder** (node engine plus the three token
+  regimes: graph-stream-only ~1.2–1.4M, realistic linear field ~150–185k, nonlinear
+  Kerr ~85–90k tok/s, and exactly where the cost goes) is in
+  [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
 
-## Principle
+## Principle & discipline
 
-Everything is **weights-free** and verified by **exact finite-N identities**
-(unitarity, gauge invariance, exact interference) at machine precision — not by
-fitted exponents or asymptotic claims. Where a result is uncertain or a probe
-failed, that is recorded honestly rather than hidden.
+- **Weights-free.** No trainer, no fitted parameters; the only structure is the graph
+  topology and its gauge flux.
+- **Physics, not arithmetic.** Computation is the wave itself — phase, interference,
+  Kerr self-focusing. No ad-hoc algebra, no magnitude-only or phase-clipped readout;
+  the full complex phase carrier is preserved end to end (see
+  [`docs/PHYSICS_ONLY_DISCIPLINE.md`](docs/PHYSICS_ONLY_DISCIPLINE.md)).
+- **C/C++ only.** All executable logic and tests are C++20. No Python, PowerShell,
+  notebooks, or SQL/database framing; CMake + ctest is the only harness, and build
+  artifacts (`*.obj`, `*.exe`, `build/`) are git-ignored — no clutter in the tree.
+- **Verified & honest.** Every number is run live and checked by exact finite-N
+  identities (unitarity, gauge invariance, exact interference); uncertain or negative
+  results are recorded, not hidden.
 
 ## GNNv3 RC1 checkpoint
 
