@@ -134,3 +134,7 @@ cost is visible directly.
 - `~85–90k tok/s` = nonlinear Kerr streaming (the production recognition/compression
   engine).
 - When a number is quoted, name the **engine**, the **unit**, and the **regime**.
+
+For the 100M-scale projection (RAM/time for both engines) and the hidden-qubit
+interpretation (capacity `log2 N`, linear non-entangling vs nonlinear entangling),
+see [`SCALING_AND_QUBITS.md`](SCALING_AND_QUBITS.md).

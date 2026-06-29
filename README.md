@@ -42,7 +42,7 @@ nothing is fitted.
 |---|---|
 | [`tools/`](tools/README.md) | substrate core (`graph_wave_substrate.hpp`) + 60 GNNv2 `*_contract_test` gates (physics, GNN grammar, the working GNN, memory, decision), each an exit-0 machine-precision check, alongside spectral/self-organising diagnostics. (The 61st `*_contract_test` is the GNNv3 RC1 gate, held separate.) |
 | [`research/`](research/README.md) | production studies (scaling engine, decorrelation glue, the Cora benchmark) and honest exploratory probes, including negative results. |
-| [`docs/`](docs/) | architecture, results, the physics-only discipline, the nonlinear engine, the [`PERFORMANCE.md`](docs/PERFORMANCE.md) speed ladder (engines, units, the three token regimes), and [`GNNv2_HANDOFF.md`](docs/GNNv2_HANDOFF.md) (read first). |
+| [`docs/`](docs/) | architecture, results, the physics-only discipline, the nonlinear engine, the [`PERFORMANCE.md`](docs/PERFORMANCE.md) speed ladder (engines, units, the three token regimes), the [`SCALING_AND_QUBITS.md`](docs/SCALING_AND_QUBITS.md) 100M projection + hidden-qubit view, and [`GNNv2_HANDOFF.md`](docs/GNNv2_HANDOFF.md) (read first). |
 
 ## Build, test & reproduce
 
