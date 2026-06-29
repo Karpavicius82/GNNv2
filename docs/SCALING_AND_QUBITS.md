@@ -1,79 +1,92 @@
-# GNNv2 — scaling to 100M and the hidden-qubit view
+# GNNv2 — scaling and the hidden-qubit view
 
-This projects the two engines to the 100M scale and gives the "hidden-qubit"
-interpretation of what is being computed. Two honesty notes up front:
+Consolidated comparison of both engines: measured anchors, the 100M projection, and
+the hidden-qubit interpretation. Read with [`PERFORMANCE.md`](PERFORMANCE.md).
 
-- The **measured anchors** below are real runs. The **100M figures are theoretical
-  extrapolations** (linear in the measured cost), not executed at 100M — they are
-  labelled as such.
-- "Hidden qubits" = `log2(field dimension)`. It is a **capacity / structure lens**,
-  not a claim of quantum advantage: the substrate is **classically simulable**, so
-  there is no exponential speedup — the qubit count is `log2 N`, and entanglement is
-  bounded (≲ ln 2). See [`docs/PERFORMANCE.md`](PERFORMANCE.md) for the two engines and
-  their units (NODES vs TOKENS — never conflate).
+**Ground rules (so nothing is conflated):**
+- There are **two engines with different units**. The **node-scaling engine** is in
+  **NODES**; the **streaming engine** is in **TOKENS**. They are **different
+  operations and are never compared head-to-head** — each is scaled within its own
+  unit. `nodes/s ≠ tokens/s`.
+- **Measured** rows are real runs; **100M** rows are linear **extrapolations** (not
+  executed at 100M), and absolute time is **host-dependent** ("this host" ≈ 2× slower
+  than a "reference host").
+- **Hidden qubits = `log2(field dimension)`** — an information-capacity lens. The
+  substrate is **classically simulable**: no quantum advantage; entanglement is
+  bounded (≲ ln 2). "Linear vs nonlinear" changes **entanglement**, not qubit count.
 
-## Measured anchors
+---
 
-| engine | run | RAM | time | nodes |
-|---|---|---|---|---|
-| linear flow (node-scale, `g=0`) | 10,000,000 nodes | 2.17 GB | 9 s | 10M |
-| linear flow (node-scale, `g=0`) | 20,000,000 nodes | 4.33 GB | 21 s | 20M |
-| nonlinear streaming (`g=7`) | 1,000,000 tokens | 793 MB | ~24 s | 142,930 |
+## A. Node-scaling engine — unit NODES
 
-Linear flow scales ~`0.217 GB` and ~`0.9–1.0 s` per million **nodes**. Nonlinear
-streaming grows the graph by `≈ tokens / 7` (uniqueEvery=7) → ~`0.143` **nodes per
-token**, and its per-token work is bounded (a 2-hop light cone), so both engines are
-**linear in their own unit**.
+One unitary propagation `e^{-iHt}` over a single field of `N` graph nodes
+(`research/probe_sparse_scale.cpp`, sparse Chebyshev). The whole field is one register.
 
-## 100M projection (theoretical)
+| N (nodes) | RAM | time (this host) | nodes/s | hidden qubits `log2 N` | entanglement |
+|---|---|---|---|---|---|
+| 1,000,000 | ~0.22 GB | ~0.85 s | ~1.1M (ref ~2M) | 20.0 | none (linear) |
+| 10,000,000 *(measured)* | 2.17 GB | 9 s | ~1.1M | 23.3 | none |
+| 20,000,000 *(measured)* | 4.33 GB | 21 s | ~0.95M | 24.3 | none |
+| **100,000,000 *(projected)*** | **~22 GB** | **~100 s** | **~1M** | **26.6 (~27)** | **none** |
 
-These are **two different operations** at "100M", hence very different costs:
+A linear unitary evolves the `log2 N` qubits **without building entanglement**
+(parallel single-qubit-like rotations). A **Kerr (nonlinear)** propagation on the
+**same** `N`-node field would keep the **same `log2 N` capacity** but **engage
+entanglement** (≲ ln 2) — at higher time cost, because a nonlinear field needs explicit
+small-`dt` split-step stepping instead of one Chebyshev jump. *(A global nonlinear
+field at 100M was not run.)*
 
-| | **linear — 100M nodes** | **nonlinear streaming — 100M tokens** |
+---
+
+## B. Streaming engine — unit TOKENS (three regimes, apples-to-apples)
+
+A stream of token events; each grows the plastic graph and (optionally) evolves a
+**local 2-hop field**. The three regimes share the **same stream and graph** (so they
+ARE comparable) and differ only by how much per-token field work runs. The graph
+grows by `≈ tokens / 7` → ~14.3M nodes at 100M tokens.
+
+| regime (file) | per-token work | RAM @1M *(meas.)* | time @1M *(meas., this host)* | RAM @100M *(proj.)* | time @100M *(proj.)* |
+|---|---|---|---|---|---|
+| **graph-stream only** (`probe_graph_stream_only`) | graph bookkeeping, **no field** | 76 MB | 1.9 s (~537k tok/s) | ~7.6 GB | ~3 min (ref ~1 min) |
+| **linear field** `g=0` (`probe_linear_stream`) | + project → edge-flow → unproject | 380 MB | 18.7 s (~53k tok/s) | ~38 GB | ~31 min (ref ~9 min) |
+| **nonlinear Kerr** `g=7` (`probe_streaming_compression`) | + Kerr self-focusing (stores lin+ker) | 793 MB | 23.8 s (~42k tok/s) | ~79 GB | ~40 min (ref ~19 min) |
+
+Both RAM and time scale **linearly in tokens** (per-token work is bounded by the 2-hop
+cone). RAM ordering is physical: no field < one field (linear) < two fields (Kerr keeps
+the `g=0` control alongside).
+
+### The apples-to-apples linear vs nonlinear (within TOKENS, `g=0` vs `g=7`)
+
+| @ 100M tokens | linear field (`g=0`) | nonlinear Kerr (`g=7`) |
 |---|---|---|
-| what it is | **one** propagation over a 100M-element field | **100M sequential** token events |
-| field built | the 100M-node field itself | a graph grown to **~14.3M nodes** (100M / 7) |
-| **RAM** | **~22 GB** (0.217 GB/M × 100M) | **~75–80 GB** (793 MB / 143k ≈ 5.5 KB/node × 14.3M) |
-| **time** | **~100 s** | **~2400 s (~40 min)** this host @42k tok/s · **~1150 s (~19 min)** reference @~87k tok/s |
-| **scaling** | linear in nodes | linear in tokens (bounded per-token work) |
+| RAM | ~38 GB | ~79 GB (~2×, two fields) |
+| time (this host) | ~31 min | ~40 min (~1.3×) |
+| compression | none (linear disperses) | **~3×** (energy concentrates) |
+| recognition | 100% (vs ~31% random) | 100% (vs ~31% random) |
 
-(RAM for the streaming case is a linear-in-nodes extrapolation; it may come out lower
-because most of the 14.3M nodes are short-lived "novel" tokens with tiny per-node
-memory. The 100M-token run would need ~80 GB and tens of minutes, so it is estimated,
-not executed.)
+So the nonlinearity costs ~2× RAM and ~1.3× time and buys **~3× compression** — at the
+**same recognition**.
 
-## The hidden-qubit view
+### Hidden qubits — streaming
 
-Field over `N` elements ⇒ `n = log2 N` hidden qubits. Three independent axes (not one
-number): **capacity** `log2 N` · **occupancy** `q(t)` · **entanglement** (≲ ln 2).
-
-| | **linear — 100M nodes** | **nonlinear streaming — 100M tokens** |
+| | value | note |
 |---|---|---|
-| total capacity | `log2(10^8) ≈ 26.6` (**~27 qubits**), one register | `log2(14.3M) ≈ 23.8` (**~24 qubits**), the sparse memory |
-| active per step | the whole ~27-qubit register | `log2(local cone ~16–30) ≈ 4–5` qubits per token |
-| entanglement | **≈ none** — a linear unitary evolves the qubits like parallel single-qubit rotations (separable) | **engaged** — Kerr is a state-adaptive unitary that **entangles** the local cone (bounded ≲ ln 2) |
+| memory capacity | `log2(14.3M) ≈ 23.8` (~24 qubits) | the whole sparse memory at 100M tokens |
+| active per token | `log2(local cone ~16–30) ≈ 4–5` qubits | only the 2-hop cone is evolved per step |
+| entanglement | `g=0`: **none** · `g=7`: **engaged**, ≲ ln 2 | Kerr is a state-adaptive (entangling) unitary |
 
-**The key contrast.** Nonlinearity does **not add qubits** — it **engages** them:
+---
 
-- **Linear 100M nodes** = one ~27-qubit register evolving **without entanglement**
-  (parallel rotations); cheap (~22 GB, ~100 s) because it is one global linear jump
-  (e.g. a single Chebyshev expansion).
-- **Nonlinear 100M tokens** = **100M sequential ~4–5-qubit *entangling* local
-  computations**, accumulated into a ~24-qubit-capacity sparse memory; heavier
-  (~75–80 GB, ~40 min) because each token is a full local Kerr evolution plus the
-  `project → edge-flow → unproject` round trip, not a single global jump.
+## The one-line picture
 
-So the nonlinear engine, at "100M", is **a stream of small entangled interactions**,
-whereas the linear engine is **one large non-interacting register**. The nonlinearity
-buys interaction (entanglement, energy compression), not more qubits — and it stays
-classically simulable, so this is a capacity/structure description, not a quantum
-speedup claim.
+- **Node engine (NODES):** one large `log2 N`-qubit register (≈27 qubits at 100M
+  nodes), evolved **without entanglement**, very fast (~22 GB, ~100 s).
+- **Streaming engine (TOKENS):** a **stream of ~4–5-qubit local computations** into a
+  ~24-qubit-capacity sparse memory; with Kerr these local computations **entangle**
+  (≲ ln 2) and compress ~3×.
+- **Nonlinearity engages qubits (entanglement / compression); it does not add them.**
+  Everything is classically simulable — this is a capacity/structure description, not
+  a quantum-speedup claim.
 
-## Caveats
-
-- 100M numbers are **extrapolations** from the measured 1M / 10M / 20M anchors, not
-  runs at 100M. Absolute time is **host-dependent** (this host ≈ 2× slower than the
-  reference; see `PERFORMANCE.md`).
-- Qubit counts are `log2(field dimension)` — an information-capacity lens. The
-  substrate is classically simulable; entanglement is bounded (≲ ln 2). No quantum
-  advantage is claimed.
+*(100M figures are extrapolations from the 1M / 10M / 20M anchors; not run at 100M.
+Time is host-dependent — see `PERFORMANCE.md`.)*
