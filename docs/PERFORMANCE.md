@@ -39,7 +39,7 @@ each adds work on top of the one above:
 
 | regime | per-token hot loop | file | tok/s (this host) | tok/s (reference host) |
 |---|---|---|---|---|
-| **graph-stream only** (no field) | node add · `touch`/`decay`/`prune` · window · plaquette phase | diagnostic only (strip the field evolve) | — | **~1.2–1.4M** |
+| **graph-stream only** (no field) | node add · `touch`/`decay`/`prune` · window · plaquette phase | `research/probe_graph_stream_only.cpp` | **~0.5M** | **~1.2–1.4M** |
 | **realistic linear field** (`g=0`) | the above **+ project → edge-flow → unproject** | `research/probe_linear_stream.cpp` | **~50–57k** | **~177–184k** |
 | **nonlinear Kerr** (`g=7`) | the above **+ Kerr self-focusing phase** per step | `research/probe_streaming_compression.cpp` | **~42k** | **~85–90k** |
 
@@ -107,6 +107,9 @@ Kerr layer buys ~3× energy compression for ~2× more time (reference host).
 ```bat
 :: node-scaling engine (NODES) — sweeps N to 1,000,000:
 cl /O2 /EHsc /std:c++20 /I tools research\probe_sparse_scale.cpp        && .\probe_sparse_scale.exe
+
+:: graph-stream only (TOKENS, no field) — the throughput ceiling:
+cl /O2 /EHsc /std:c++20 research\probe_graph_stream_only.cpp             && .\probe_graph_stream_only.exe 1000000
 
 :: linear field streaming baseline (TOKENS, g=0) — 1,000,000 tokens:
 cl /O2 /EHsc /std:c++20 /I tools research\probe_linear_stream.cpp        && .\probe_linear_stream.exe 1000000
