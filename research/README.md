@@ -30,6 +30,7 @@ nonlinear; **nodes/s ≠ tokens/s**.
 |---|---|
 | `probe_streaming_compression` | streams **TOKENS** into a plastic graph + local 2-hop Kerr field; ≈3× compression vs the linear `g=0` baseline, REAL 100% / RANDOM ≈31%; throughput in **tokens/s** (the graph grows to ~143k nodes, but its input/throughput are TOKENS — never nodes/s). See `docs/ARCHITECTURE.md` §4, `docs/NONLINEAR_ENGINE.md` |
 | `probe_nonlinear_engine` | driver for the closed Kerr engine (`tools/graph_wave_nonlinear_engine.hpp`): psi/chi densification + tau structure-sensing over the same **TOKEN** stream |
+| `probe_linear_stream` | LINEAR token-stream control (`g = 0`, no Kerr): same stream generator and plastic-graph params, a single linear field — the tok/s + recognition **baseline** the Kerr layer is measured against (REAL 100% / RANDOM ≈31%, throughput in **tokens/s**). This is the streaming engine with the nonlinearity off — not the node-scaling engine |
 
 ## Decorrelation glue (verified)
 | file | result |

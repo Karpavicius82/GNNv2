@@ -42,7 +42,7 @@ nothing is fitted.
 |---|---|
 | [`tools/`](tools/README.md) | substrate core (`graph_wave_substrate.hpp`) + 60 GNNv2 `*_contract_test` gates (physics, GNN grammar, the working GNN, memory, decision), each an exit-0 machine-precision check, alongside spectral/self-organising diagnostics. (The 61st `*_contract_test` is the GNNv3 RC1 gate, held separate.) |
 | [`research/`](research/README.md) | production studies (scaling engine, decorrelation glue, the Cora benchmark) and honest exploratory probes, including negative results. |
-| [`docs/`](docs/) | architecture, results, the physics-only discipline, the nonlinear engine, and [`GNNv2_HANDOFF.md`](docs/GNNv2_HANDOFF.md) (read first). |
+| [`docs/`](docs/) | architecture, results, the physics-only discipline, the nonlinear engine, the [`PERFORMANCE.md`](docs/PERFORMANCE.md) speed ladder (engines, units, the three token regimes), and [`GNNv2_HANDOFF.md`](docs/GNNv2_HANDOFF.md) (read first). |
 
 ## Build & run (Windows / MSVC)
 
@@ -79,6 +79,7 @@ Notes:
 - `probe_sparse_scale` takes **no arguments** — it sweeps N internally to 1,000,000 nodes. Speed = nodes ÷ ms.
 - The streaming probe takes `[stream_tokens] [uniqueEvery]` (default `60000 7`); pass `1000000` to stream 1M tokens. The closed nonlinear engine `research/probe_nonlinear_engine.cpp` runs the same way: `… && .\probe_nonlinear_engine.exe 1000000`.
 - **`1,000,000 nodes` is the linear engine; `1,000,000 tokens` is the nonlinear engine. `nodes/s ≠ tokens/s`.**
+- For the full speed ladder — the node engine (nodes/s) plus the three token regimes (graph-stream-only ~1.2–1.4M, realistic linear field ~150–185k, nonlinear Kerr ~85–90k tok/s) and exactly where the cost goes — see [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
 
 ## Principle
 
