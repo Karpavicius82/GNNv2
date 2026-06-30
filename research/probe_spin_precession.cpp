@@ -17,29 +17,27 @@
 // about different axes in sequence) is the Coriolis geometric phase that sources the
 // nonlinearity, order- and state-dependent.
 // -----------------------------------------------------------------------------
+#include "../tools/graph_wave_substrate.hpp"
+
 #include <algorithm>
-#include <array>
 #include <cmath>      // std::fabs / std::max only (not transcendental); NO sqrt/cos/sin/exp
 #include <cstdio>
 
 namespace {
-using V3 = std::array<double, 3>;
+using V3 = gw::R3;
 
 V3 cross(const V3& a, const V3& b) {
-  return {a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]};
+  return gw::cross3(a, b);
 }
-double dot(const V3& a, const V3& b) { return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]; }
+double dot(const V3& a, const V3& b) { return gw::dot3(a, b); }
 double sqdist(const V3& a, const V3& b) {
-  double dx=a[0]-b[0], dy=a[1]-b[1], dz=a[2]-b[2]; return dx*dx + dy*dy + dz*dz;
+  return gw::sqdist3(a, b);
 }
 
 // Cayley-SO(3): exact rotation by half-angle vector k. multiply/add/divide ONLY.
 // |R(k) b| = |b| exactly, for any k -- no sqrt, no trig, no renorm.
 V3 rotate(const V3& b, const V3& k){
-  const V3 kb  = cross(k, b);
-  const V3 kkb = cross(k, kb);
-  const double f = 2.0 / (1.0 + dot(k, k));
-  return { b[0] + f*(kb[0]+kkb[0]), b[1] + f*(kb[1]+kkb[1]), b[2] + f*(kb[2]+kkb[2]) };
+  return gw::cayleySO3Rotate(b, k);
 }
 
 // GEOMETRIC kernel: one precession substep = an exact Cayley rotation about omega.

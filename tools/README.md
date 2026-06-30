@@ -5,12 +5,12 @@
 the eigensolver). Two further headers carry the nonlinear extensions:
 `graph_wave_nonlinear_engine.hpp` and `qubit_physics.hpp`.
 
-The directory holds **76 `.cpp` files**: **61 `*_contract_test`** (60 GNNv2 gates +
+The directory holds **77 `.cpp` files**: **62 `*_contract_test`** (61 GNNv2 gates +
 the 1 GNNv3 RC1 contract, held separate), **9 `*_diagnostic_test`** characterisation
-programs, **5** earlier `*_test` programs, and the non-test `absorbing_screen.cpp`. A
+programs, **6** earlier `*_test` programs, and the non-test `absorbing_screen.cpp`. A
 **contract test** builds to a standalone executable that prints its own invariants and
 a `RESULT : n / n verified` line, proving one property exactly at machine precision;
-the **60 GNNv2 contract gates** form the ctest suite (the GNNv3 RC1 contract builds as
+the **61 GNNv2 contract gates** form the ctest suite (the GNNv3 RC1 contract builds as
 a target but is not wired into the GNNv2 suite).
 
 Build any one directly (Windows / MSVC, Developer prompt):
@@ -36,6 +36,7 @@ ctest --test-dir build --output-on-failure
 | `graph_wave_observable_contract_test` | non-invasive observables (probability, Wilson phase, edge current) |
 | `graph_wave_interferometer_cell_contract_test` | flux routing: 0 → out+, π → out− |
 | `graph_wave_substrate_port_contract_test` | the clean packet → medium → observable boundary |
+| `graph_wave_pure_physics_chain_contract_test` | dynamic U(1) flux, Cayley SO(3) holonomy, and rational local Kerr densification in the shared substrate |
 | `absorbing_screen` | measurement as a separate non-Hermitian layer (detector accounting) |
 
 ## GNN grammar (message-passing primitives)

@@ -49,7 +49,7 @@ grows by `≈ tokens / 7` → ~14.3M nodes at 100M tokens.
 |---|---|---|---|---|---|
 | **graph-stream only** (`probe_graph_stream_only`) | graph bookkeeping, **no field** | 76 MB | 1.9 s (~537k tok/s) | ~7.6 GB | ~3 min (ref ~1 min) |
 | **linear field** `g=0` (`probe_linear_stream`) | + project → edge-flow → unproject | 380 MB | 18.7 s (~53k tok/s) | ~38 GB | ~31 min (ref ~9 min) |
-| **nonlinear Kerr** `g=7` (`probe_streaming_compression`) | + Kerr self-focusing (stores lin+ker) | 793 MB | 23.8 s (~42k tok/s) | ~79 GB | ~40 min (ref ~19 min) |
+| **nonlinear Kerr** `g=7` (`probe_streaming_compression`) | + Kerr self-focusing, packet memory, prepared Cayley flow | 1.23 GB @10M *(meas.)* | 139.95 s @10M (~71.5k tok/s) | ~12.3 GB | ~23 min |
 
 Both RAM and time scale **linearly in tokens** (per-token work is bounded by the 2-hop
 cone). RAM ordering is physical: no field < one field (linear) < two fields (Kerr keeps
@@ -59,13 +59,16 @@ the `g=0` control alongside).
 
 | @ 100M tokens | linear field (`g=0`) | nonlinear Kerr (`g=7`) |
 |---|---|---|
-| RAM | ~38 GB | ~79 GB (~2×, two fields) |
-| time (this host) | ~31 min | ~40 min (~1.3×) |
+| RAM | ~38 GB | ~12.3 GB for current packet/prepared Kerr path (not apples-to-apples with the old linear map backend) |
+| time (this host) | ~31 min old linear map backend | ~23 min current nonlinear packet/prepared backend |
 | compression | none (linear disperses) | **~3×** (energy concentrates) |
-| recognition | 100% (vs ~31% random) | 100% (vs ~31% random) |
+| recognition | 100% (vs ~31% random, older linear baseline) | 100% (vs 27.8% random at 10M) |
 
-So the nonlinearity costs ~2× RAM and ~1.3× time and buys **~3× compression** — at the
-**same recognition**.
+The current nonlinear path is no longer a pure "same backend plus Kerr" comparison:
+packet memory and prepared Cayley flow remove much of the previous carrier overhead.
+The physics result is unchanged — **~3× compression** at **100% recognition** — but the
+engineering projection is now materially lower RAM/time than the older map-backed
+nonlinear row.
 
 ### Hidden qubits — streaming
 
@@ -88,5 +91,5 @@ So the nonlinearity costs ~2× RAM and ~1.3× time and buys **~3× compression**
   Everything is classically simulable — this is a capacity/structure description, not
   a quantum-speedup claim.
 
-*(100M figures are extrapolations from the 1M / 10M / 20M anchors; not run at 100M.
+*(100M figures are extrapolations from the 1M / 3M / 10M / 20M anchors; not run at 100M.
 Time is host-dependent — see `PERFORMANCE.md`.)*

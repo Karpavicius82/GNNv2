@@ -1,6 +1,6 @@
 # GNNv2 Handoff
 
-Date: 2026-06-28
+Date: 2026-07-01
 
 Read this before touching GNNv2. It exists so the next session does not rediscover
 the same path or re-run settled negatives.
@@ -44,9 +44,11 @@ distinct engines that must never be conflated** (canonical: `ARCHITECTURE.md` §
   **nodes/s**), linear in N, norm drift ~2e-16. Source `research/probe_sparse_scale.cpp`.
 - **Nonlinear streaming engine** — Kerr compression, **unit = TOKENS**. Streams a
   sequence of **tokens**; each token grows a plastic graph and evolves a local 2-hop
-  Kerr field: ~42,000 **tokens/s** (1,000,000 **tokens** in ~24 s, graph growing to
-  ~143,000 nodes, ~0.8 GB), **≈3× compression** (REAL 100% vs RANDOM ≈31%). Source
-  `research/probe_streaming_compression.cpp`, `tools/graph_wave_nonlinear_engine.hpp`.
+  Kerr field. Current production path uses packet memory plus prepared Cayley flow:
+  10,000,000 **tokens** in 139.95 s (**71,452 tokens/s**), graph growing to 1,428,644
+  nodes, 1.23 GB peak RAM, **3.09x compression** (REAL 100% vs RANDOM 27.8%),
+  36 true / 0 false bridges. Source `research/probe_streaming_compression.cpp`,
+  `tools/graph_wave_substrate.hpp`, `tools/graph_wave_nonlinear_engine.hpp`.
 
 `nodes/s ≠ tokens/s`: 1,000,000 **nodes** = the linear engine; 1,000,000 **tokens** =
 the nonlinear engine. The ≈3× compression belongs to the nonlinear **token** engine.
@@ -59,8 +61,8 @@ Run them (Windows / MSVC, from the repo root):
 :: LINEAR engine (nodes) -- no args, sweeps N to 1,000,000 nodes:
 cl /O2 /EHsc /std:c++20 /I tools research\probe_sparse_scale.cpp && .\probe_sparse_scale.exe
 
-:: NONLINEAR engine (tokens) -- arg = stream length, here 1,000,000 tokens:
-cl /O2 /EHsc /std:c++20 /I tools research\probe_streaming_compression.cpp && .\probe_streaming_compression.exe 1000000
+:: NONLINEAR engine (tokens) -- args = stream length and unique cadence, here 10,000,000 tokens:
+cl /O2 /EHsc /std:c++20 /I tools research\probe_streaming_compression.cpp && .\probe_streaming_compression.exe 10000000 7
 ```
 
 - **Flow** — unitary propagation `z_i ← Σ_j e^{i·δ_ij} z_j`; the edge flux `δ_ij` is
@@ -74,6 +76,45 @@ cl /O2 /EHsc /std:c++20 /I tools research\probe_streaming_compression.cpp && .\p
   field, not a separate operation. Solitonic: stored energy stays localized under
   field noise (it does not disperse; it also does not reconstruct identity — measure
   by participation ratio, not template overlap). See `NONLINEAR_ENGINE.md`.
+
+## Current Nonlinear Production Closure (2026-07-01)
+
+Accepted low-level optimizations:
+
+- `GW_STREAM_PACKET_MEM=1`: tiny local `lin` / `ker` / `sense` fields are carried as
+  packet arrays instead of hash maps. This changes memory shape, not phase physics.
+- `GW_STREAM_PREPARED_CAYLEY=1`: the local light cone prepares the Cayley flow carrier
+  directly. This removes a `SparseBond -> LocalCayleyFlowCarrier` repack in the hot
+  loop while preserving bond order, phase, normalization and Kerr pressure.
+- `graph_wave_pure_physics_chain_contract_test`: substrate-level contract for dynamic
+  U(1) flux, Cayley SO(3) holonomy, and rational local Kerr densification.
+- `probe_streaming_compression_smoke`: operational CTest smoke for the production
+  streaming path.
+
+Rejected optimization:
+
+- Small adjacency carrier for `Graph::adj`: rejected because it changed the streaming
+  trajectory (horizons/bridges shifted). Do not revive it without a new physical reason
+  and a strict A/B gate.
+
+Latest checks:
+
+```text
+ctest --test-dir build -C Release -L nonlinear --output-on-failure
+5 / 5 passed
+
+probe_streaming_compression.exe 10000000 7
+compression=3.09x
+REAL=100.0% RANDOM=27.8%
+bridges=36 true / 0 false
+tokens_per_sec=71452
+peak_ram_mb=1227
+```
+
+Calibration/stabilization note: `TOPK`, `WMIN`, `SMIN`, decay, and bridge coherence
+thresholds are operational gates that prevent finite-precision/noise/history
+bleeding from becoming "information". They are not the active physics. The active
+physics remains phase, superposition, Cayley transport and local Kerr pressure.
 
 ## Research Timeline (settled)
 
@@ -116,8 +157,8 @@ Windows / MSVC, from a Developer prompt or via CMake:
 ```
 cmake -B build -S .
 cmake --build build
-ctest --test-dir build --output-on-failure     # the 60 GNNv2 contract gates
-ctest --test-dir build -L nonlinear            # just the nonlinear suite
+ctest --test-dir build --output-on-failure     # the 61 GNNv2 contract gates
+ctest --test-dir build -C Release -L nonlinear # just the nonlinear suite
 ctest --test-dir build -j 8                     # parallel (the full suite is slow serially)
 ```
 
@@ -137,6 +178,9 @@ data-dependent); run them directly.
   (coherent shared support) and WHEN horizon says (crystallized) — its value is
   associative long-range linking in the LINEAR regime, kept out of the nonlinear
   compression path.
+- Next performance work should target `bonds` / graph light-cone gathering and
+  `sense` / `unproject`, but only as carrier/backend work with A/B tests that preserve
+  horizons, compression, recognition, bridge counts, and false bridges.
 - Keep GNNv2 separate from GNNv3 RC1 until the carrier-field gate is independently
   stable.
 - Doc upkeep: `tools/README.md` / `research/README.md` are the file inventories;

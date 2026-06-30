@@ -41,7 +41,7 @@ each adds work on top of the one above:
 |---|---|---|---|---|
 | **graph-stream only** (no field) | node add · `touch`/`decay`/`prune` · window · plaquette phase | `research/probe_graph_stream_only.cpp` | **~0.5M** | **~1.2–1.4M** |
 | **realistic linear field** (`g=0`) | the above **+ project → edge-flow → unproject** | `research/probe_linear_stream.cpp` | **~50–57k** | **~177–184k** |
-| **nonlinear Kerr** (`g=7`) | the above **+ Kerr self-focusing phase** per step | `research/probe_streaming_compression.cpp` | **~42k** | **~85–90k** |
+| **nonlinear Kerr** (`g=7`) | packet memory + prepared Cayley carrier + Kerr self-focusing phase | `research/probe_streaming_compression.cpp` | **~71–90k** (71.5k at 10M, ~90k at 300k) | reference not remeasured after packet/prepared |
 
 All three process the same stream (TOPICS=3, PER=24, WIN=4, TOPK=6, seed 11, bursts
 of 6, uniqueEvery 7) and grow the same graph (1,000,000 tokens → ~142,930 nodes).
@@ -63,9 +63,13 @@ computation**, with no nonlinearity:
   pass per step, `STEPS=2`);
 - **unproject**: scatter the evolved local vector back into the per-node `unordered_map`s.
 
-**nonlinear Kerr** (`g=7`) — identical to the linear field path, plus a Kerr
-self-focusing phase `e^{-i g|ψ|² dt}` applied between the half-steps. This is what
-gives ~3× energy compression and is the production recognition engine.
+**nonlinear Kerr** (`g=7`) — identical physics to the linear field path, plus a Kerr
+self-focusing phase `e^{-i g|ψ|² dt}` applied between the half-steps. Current
+production form keeps the active node memories in packet fields and prepares the
+Cayley bond carrier directly in the light cone, so the wave carrier is not repacked
+through a hash-map/SparseBond detour. This changes the transport form, not the
+phase/Kerr physics; A/B tests preserved the same horizons, bridges, recognition and
+compression.
 
 ### Where the time goes (the key fact)
 
@@ -74,8 +78,33 @@ The graph update is **cheap**. The dominant cost is the **field round trip**:
 gather, the unitary rotations, and writing the result back. Stripping the field
 evolution alone jumps throughput from ~180k to ~1.2–1.4M tok/s on the reference host
 (~7–8×). The Kerr term adds a further cost on top of the linear field (reference host
-~2×; this host a smaller factor — the exact Kerr/linear ratio is build/container
-dependent).
+~2× on the older reference path; this host now measures the optimized packet/prepared
+path at 10M tokens. The exact Kerr/linear ratio is build/container dependent.
+
+### Current nonlinear production anchor
+
+`research/probe_streaming_compression.cpp` with default packet memory and prepared
+Cayley flow, CMake Release build, `probe_streaming_compression.exe 10000000 7`:
+
+| quantity | value |
+|---|---|
+| stream | 10,000,000 tokens |
+| graph grown | 1,428,644 nodes |
+| horizons | 174,303 stable, 0 novel |
+| compression | 3.09x (`PR linear=6.61`, `PR nonlinear=2.14`) |
+| recognition | REAL 100.0%, RANDOM 27.8% |
+| bridges | 36 true, 0 false |
+| throughput | 71,452 tokens/s |
+| peak RAM | 1,227 MB |
+
+Regression gate:
+
+```bat
+ctest --test-dir build -C Release -L nonlinear --output-on-failure
+```
+
+Current nonlinear label contains five gates: horizon densification, nonlinear compute,
+pure-physics chain, streaming densification, and the streaming compression smoke.
 
 So the practical question "why didn't I see ~1.2M tok/s?" has a precise answer:
 **~1.2M tok/s is the graph-stream-only path, with the field computation removed.**
@@ -95,7 +124,7 @@ separates topics:
 | regime | recognition (REAL / RANDOM) | compression |
 |---|---|---|
 | realistic linear field (`g=0`) | **100% / ~31%** | none (linear disperses) |
-| nonlinear Kerr (`g=7`) | **100% / ~31%** | **~3×** (energy concentrates) |
+| nonlinear Kerr (`g=7`) | **100% / 27.8%** at 10M | **3.09x** (energy concentrates) |
 
 So the linear field is the honest **baseline**: same recognition, no compression. The
 Kerr layer buys ~3× energy compression for ~2× more time (reference host).
@@ -114,8 +143,8 @@ cl /O2 /EHsc /std:c++20 research\probe_graph_stream_only.cpp             && .\pr
 :: linear field streaming baseline (TOKENS, g=0) — 1,000,000 tokens:
 cl /O2 /EHsc /std:c++20 /I tools research\probe_linear_stream.cpp        && .\probe_linear_stream.exe 1000000
 
-:: nonlinear Kerr streaming (TOKENS, g=7) — 1,000,000 tokens:
-cl /O2 /EHsc /std:c++20 /I tools research\probe_streaming_compression.cpp && .\probe_streaming_compression.exe 1000000
+:: nonlinear Kerr streaming (TOKENS, g=7) — 10,000,000-token production anchor:
+cl /O2 /EHsc /std:c++20 /I tools research\probe_streaming_compression.cpp && .\probe_streaming_compression.exe 10000000 7
 ```
 
 Each prints its own metrics and exits 0 on its contract. `probe_linear_stream` also
@@ -127,12 +156,12 @@ cost is visible directly.
 ## 5. The never-conflate checklist
 
 - `1,000,000 nodes` (node-scaling engine) ≠ `1,000,000 tokens` (streaming engine).
-- `nodes/s` (≈1–2M) ≠ `tokens/s` (≈42k–1.4M depending on regime).
+- `nodes/s` (≈1–2M) ≠ `tokens/s` (≈71k–1.4M depending on regime).
 - `~1.2–1.4M tok/s` = graph-stream **without** the field; it is **not** the engine's
   real recognition throughput.
 - `~150–185k tok/s` = realistic linear field (the honest streaming baseline).
-- `~85–90k tok/s` = nonlinear Kerr streaming (the production recognition/compression
-  engine).
+- `~71.5k tok/s at 10M` = current nonlinear Kerr streaming production anchor on this
+  host after packet memory + prepared Cayley flow.
 - When a number is quoted, name the **engine**, the **unit**, and the **regime**.
 
 For the 100M-scale projection (RAM/time for both engines) and the hidden-qubit

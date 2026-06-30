@@ -19,13 +19,15 @@
 // rotation group is a rational variety (Cayley), so no sqrt / cos / sin / exp is ever
 // needed to stay exactly unitary. |psi|^2 is never formed.
 // -----------------------------------------------------------------------------
+#include "../tools/graph_wave_substrate.hpp"
+
 #include <algorithm>  // std::max (not transcendental)
 #include <cmath>      // std::fabs only (not transcendental); NO sqrt/cos/sin/exp anywhere
 #include <complex>    // std::norm = squared magnitude (no sqrt); std::abs(double)=fabs
 #include <cstdio>
 
 namespace {
-using cd = std::complex<double>;
+using gw::cd;
 
 struct Result { double z; double normErr; double wind; };
 
@@ -43,14 +45,10 @@ Result evolve(double A, double kappa, int T, double dt) {
   const double n0 = std::norm(a) + std::norm(b);
   double wind = 0.0;
   for (int t = 0; t < T; ++t) {
-    const double J = 2.0 * std::imag(std::conj(a) * flux * b);   // matter current (multiply)
-    const double h = 0.5 * kappa * J * dt;
-    const double r = 1.0 / (1.0 + h*h);    // <-- THE single reciprocal (state-dependent Cayley denominator)
-    flux *= cd(1.0 - h*h, 2.0*h) * r;      // unit rotor increment (1+ih)^2/(1+h^2): |incr|=1 EXACTLY, all FMA + that 1 recip
+    const double J = gw::dynamicFluxCurrent(a, b, 1.0, flux);     // matter current (multiply)
+    gw::advanceDynamicFlux(flux, J, kappa, dt);                   // unit rotor increment: |incr|=1 structurally
     wind += kappa * J * dt;                // accumulated winding = integral of the rate (pure SUM)
-    const cd na = diag*a + cd(0.0,-off)*flux*b;            // Cayley 2-site hop: unitary, rational, no sqrt
-    const cd nb = diag*b + cd(0.0,-off)*std::conj(flux)*a;
-    a = na; b = nb;
+    gw::cayleyHop2(a, b, diag, off, flux); // Cayley 2-site hop: unitary, rational, no sqrt
   }
   const double n1 = std::norm(a) + std::norm(b);
   return { (std::norm(a) - std::norm(b)) / (n1 + 1e-300), std::fabs(n1 - n0), wind };

@@ -63,3 +63,18 @@ is silently dropped.**
 `fidelity = 0` means distinct states — a COMPLETE readout MUST separate them.
 If your readout returns "0 distance" for `fidelity = 0` states, your readout is
 blind. Run the fidelity gate first, always.
+
+## Calibration is not physics
+
+Operational stabilizers are allowed, but must be named honestly:
+
+- `TOPK`, decay, support minima, horizon minima and bridge coherence thresholds are
+  noise/resource gates for finite precision, finite RAM and long streams.
+- They prevent machine noise and infinite history from being mistaken for signal.
+- They are not the active physics and must not be tuned to hide a broken result.
+
+The active physics remains phase, superposition, Cayley transport, Wilson flux and
+local Kerr pressure. If a change modifies that chain, it needs a contract and an A/B
+streaming test. If a change only carries the same local field more cheaply, it is a
+backend/carrier optimization and must preserve horizons, compression, recognition and
+false-bridge counts.

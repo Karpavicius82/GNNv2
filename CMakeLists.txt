@@ -21,6 +21,7 @@ endforeach()
 # gate here (build/run it directly per docs/GNNv3_RC1_HANDOFF.md).
 set(GNNV3_CONTRACT graph_wave_v3_feeling_gate_contract_test)
 set(NONLINEAR_CONTRACTS
+  graph_wave_pure_physics_chain_contract_test
   graph_wave_horizon_densification_contract_test
   graph_wave_streaming_densification_contract_test
   graph_wave_nonlinear_compute_contract_test)
@@ -34,6 +35,11 @@ foreach(src ${CONTRACTS})
     endif()
   endif()
 endforeach()
+
+# Self-contained operational smoke: unlike most research probes, this one
+# generates its own stream and returns nonzero on compression/value regressions.
+add_test(NAME probe_streaming_compression_smoke COMMAND probe_streaming_compression 60000 7)
+set_tests_properties(probe_streaming_compression_smoke PROPERTIES TIMEOUT 120 LABELS nonlinear)
 
 # Usage:
 #   cmake -B build -S .            configure

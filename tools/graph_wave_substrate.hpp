@@ -12,6 +12,7 @@
 // ----------------------------------------------------------------------------
 #pragma once
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <complex>
 #include <cstddef>
@@ -24,7 +25,47 @@ using cd = std::complex<double>;
 using Vec = std::vector<cd>;
 using CMat = std::vector<std::vector<cd>>;
 using RMat = std::vector<std::vector<double>>;
+using R3 = std::array<double, 3>;
 constexpr double kPi = 3.141592653589793238462643383279502884;
+
+// ---- lowest-level rational rotor primitives
+inline double dot3(const R3& a, const R3& b) {
+ return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+inline R3 cross3(const R3& a, const R3& b) {
+ return {a[1] * b[2] - a[2] * b[1],
+         a[2] * b[0] - a[0] * b[2],
+         a[0] * b[1] - a[1] * b[0]};
+}
+inline double sqdist3(const R3& a, const R3& b) {
+ const double dx = a[0] - b[0], dy = a[1] - b[1], dz = a[2] - b[2];
+ return dx * dx + dy * dy + dz * dz;
+}
+inline cd cayleyUnitRotor(double h) {
+ const double h2 = h * h;
+ const double r = 1.0 / (1.0 + h2);
+ return cd(1.0 - h2, 2.0 * h) * r;
+}
+inline cd rationalPhaseRotor2(double alpha) {
+ const double a = 1.0 - (alpha * alpha) / 12.0;
+ const double b = -0.5 * alpha;
+ const double den = 1.0 / (a * a + b * b);
+ return cd(a * a - b * b, 2.0 * a * b) * den;
+}
+inline R3 cayleySO3Rotate(const R3& b, const R3& k) {
+ const R3 kb = cross3(k, b);
+ const R3 kkb = cross3(k, kb);
+ const double f = 2.0 / (1.0 + dot3(k, k));
+ return {b[0] + f * (kb[0] + kkb[0]),
+         b[1] + f * (kb[1] + kkb[1]),
+         b[2] + f * (kb[2] + kkb[2])};
+}
+inline void cayleyHop2(cd& a, cd& b, double diag, double off, cd phase_u) {
+ cd na = diag * a + cd(0.0, -off) * phase_u * b;
+ cd nb = diag * b + cd(0.0, -off) * std::conj(phase_u) * a;
+ a = na;
+ b = nb;
+}
 
 // ---- Hermitian graph and the lattice families (extended / critical / localized)
 struct Graph {
@@ -135,6 +176,12 @@ inline double bondCurrent(cd a, cd b, double w, double phase = 0.0) {
 inline double bondCurrentU(cd a, cd b, double w, cd phase_u) {
  return 2.0 * w * std::imag(std::conj(a) * phase_u * b);
 }
+inline double dynamicFluxCurrent(cd a, cd b, double w, cd flux) {
+ return 2.0 * w * std::imag(std::conj(a) * flux * b);
+}
+inline void advanceDynamicFlux(cd& flux, double current, double kappa, double dt) {
+ flux *= cayleyUnitRotor(0.5 * kappa * current * dt);
+}
 struct LocalFlowBond {
  int a = 0, b = 0;
  double w = 0.0;
@@ -189,6 +236,12 @@ inline void observeCompiledBond(const Vec& psi, const LocalFlowBond& e, LocalFlo
 }
 inline void applyKerrPhase(Vec& psi, double dt, double g) {
  if (g != 0.0) for (auto& v : psi) v *= std::exp(cd(0, -g * std::norm(v) * dt));
+}
+inline void applyKerrPhaseRational2(Vec& psi, double dt, double g) {
+ if (g == 0.0) return;
+ for (auto& v : psi) {
+  v *= rationalPhaseRotor2(g * std::norm(v) * dt);
+ }
 }
 inline void rotateBondU(cd& a, cd& b, double theta, cd phase_u) {
  const double c = std::cos(theta), s = std::sin(theta);
@@ -274,6 +327,92 @@ inline void edgeLocalKerrFlowPair(Vec& lin, Vec& ker, const std::vector<SparseBo
    rotateCompiledBond(ker[e.a], ker[e.b], e);
   }
  }
+}
+
+struct LocalCayleyFlowBond {
+ int a = 0, b = 0;
+ double w = 0.0;
+ double diag = 1.0;
+ double off = 0.0;
+ cd phase_u = cd(1.0, 0.0);
+};
+inline LocalCayleyFlowBond makeLocalCayleyFlowBond(int a, int b, double raw_w,
+                                                   cd phase_u, double dt, double inv_max_w) {
+ const double w = raw_w * inv_max_w;
+ const double theta = 0.5 * dt * w;
+ const double m = 0.5 * theta;
+ const double m2 = m * m;
+ const double den = 1.0 / (1.0 + m2);
+ const double diag = (1.0 - m2) * den;
+ const double off = 2.0 * m * den;
+ return {a, b, w, diag, off, phase_u};
+}
+struct LocalCayleyFlowCarrier {
+ std::vector<LocalCayleyFlowBond> bonds;
+ explicit LocalCayleyFlowCarrier(const std::vector<SparseBond>& src, double dt) {
+  double max_w = 0.0;
+  for (const auto& e : src) max_w = std::max(max_w, std::abs(e.w));
+  const double inv = max_w > 1e-300 ? 1.0 / max_w : 0.0;
+  bonds.reserve(src.size());
+  for (const auto& e : src) {
+   bonds.push_back(makeLocalCayleyFlowBond(e.a, e.b, e.w, e.phase_u, dt, inv));
+  }
+ }
+};
+inline void rotateCayleyBond(cd& a, cd& b, const LocalCayleyFlowBond& e) {
+ cayleyHop2(a, b, e.diag, e.off, e.phase_u);
+}
+inline void observeCayleyBond(const Vec& psi, const LocalCayleyFlowBond& e, LocalFlowStats* stats) {
+ if (!stats) return;
+ const double j = bondCurrentU(psi[e.a], psi[e.b], e.w, e.phase_u);
+ const double rho = std::norm(psi[e.a]) + std::norm(psi[e.b]) + 1e-300;
+ stats->current_abs += std::abs(j);
+ stats->max_bond_speed = std::max(stats->max_bond_speed, std::abs(j) / rho);
+ stats->bond_visits++;
+}
+inline void edgeLocalRationalKerrFlowPairPrepared(Vec& lin, Vec& ker,
+                                                  const std::vector<LocalCayleyFlowBond>& bonds,
+                                                  double dt, double g_ker, int steps,
+                                                  LocalFlowStats* ker_stats = nullptr,
+                                                  LocalFlowStats* lin_stats = nullptr) {
+ if (!ker_stats && !lin_stats) {
+  for (int s = 0; s < steps; ++s) {
+   for (const auto& e : bonds) {
+    rotateCayleyBond(lin[e.a], lin[e.b], e);
+    rotateCayleyBond(ker[e.a], ker[e.b], e);
+   }
+   applyKerrPhaseRational2(ker, dt, g_ker);
+   for (auto it = bonds.rbegin(); it != bonds.rend(); ++it) {
+    const auto& e = *it;
+    rotateCayleyBond(lin[e.a], lin[e.b], e);
+    rotateCayleyBond(ker[e.a], ker[e.b], e);
+   }
+  }
+  return;
+ }
+ for (int s = 0; s < steps; ++s) {
+  for (const auto& e : bonds) {
+   observeCayleyBond(lin, e, lin_stats);
+   rotateCayleyBond(lin[e.a], lin[e.b], e);
+   observeCayleyBond(ker, e, ker_stats);
+   rotateCayleyBond(ker[e.a], ker[e.b], e);
+  }
+  applyKerrPhaseRational2(ker, dt, g_ker);
+  for (auto it = bonds.rbegin(); it != bonds.rend(); ++it) {
+   const auto& e = *it;
+   observeCayleyBond(lin, e, lin_stats);
+   rotateCayleyBond(lin[e.a], lin[e.b], e);
+   observeCayleyBond(ker, e, ker_stats);
+   rotateCayleyBond(ker[e.a], ker[e.b], e);
+  }
+ }
+}
+inline void edgeLocalRationalKerrFlowPair(Vec& lin, Vec& ker, const std::vector<SparseBond>& bonds,
+                                          double dt, double g_ker, int steps,
+                                          LocalFlowStats* ker_stats = nullptr,
+                                          LocalFlowStats* lin_stats = nullptr) {
+ LocalCayleyFlowCarrier carrier(bonds, dt);
+ edgeLocalRationalKerrFlowPairPrepared(lin, ker, carrier.bonds, dt, g_ker, steps, ker_stats, lin_stats);
 }
 
 // ---- orthonormal-row kernel construction (fan-in / message materialization)

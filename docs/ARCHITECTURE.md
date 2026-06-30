@@ -91,13 +91,16 @@ Run (no args; sweeps N to 1M):
 **Nonlinear streaming engine — Kerr compression. Unit: TOKENS.**
 A separate engine streams a sequence of **tokens**; each token event grows a plastic
 graph and evolves a local 2-hop field with Kerr nonlinearity
-`i ψ̇ = −H ψ − g|ψ|²ψ`. It concentrates energy (**≈3× compression** vs the linear
-`g = 0` baseline) while preserving recognition (REAL 100% vs RANDOM ≈31%). Throughput
-is **≈42,000 tokens/s** (1,000,000 tokens in ~24 s, the graph growing to ~143,000
-nodes, ~0.8 GB). Source: `research/probe_streaming_compression.cpp`,
-`tools/graph_wave_nonlinear_engine.hpp`. See `docs/NONLINEAR_ENGINE.md`.
-Run (1M tokens; arg = stream length):
-`cl /O2 /EHsc /std:c++20 /I tools research\probe_streaming_compression.cpp && .\probe_streaming_compression.exe 1000000`.
+`i ψ̇ = −H ψ − g|ψ|²ψ`. It concentrates energy (**3.09x compression** vs the linear
+`g = 0` baseline) while preserving recognition (REAL 100% vs RANDOM 27.8%). Current
+production throughput is **71,452 tokens/s** on a 10,000,000-token CMake Release run;
+the graph grew to 1,428,644 nodes with 1.23 GB peak RAM. The accepted backend uses
+packet memory and a prepared Cayley flow carrier; this changes the carrier form, not
+the phase/Kerr physics. Source: `research/probe_streaming_compression.cpp`,
+`tools/graph_wave_substrate.hpp`, `tools/graph_wave_nonlinear_engine.hpp`. See
+`docs/NONLINEAR_ENGINE.md`.
+Run (10M tokens; args = stream length and unique cadence):
+`cl /O2 /EHsc /std:c++20 /I tools research\probe_streaming_compression.cpp && .\probe_streaming_compression.exe 10000000 7`.
 
 The two never mix: 1,000,000 **nodes** = the linear engine; 1,000,000 **tokens** = the
 nonlinear engine; **nodes/s ≠ tokens/s**. When any doc says "the engine", it must say

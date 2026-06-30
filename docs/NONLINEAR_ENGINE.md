@@ -46,3 +46,47 @@ over-mixes into chaos and degrades both; `g=0` does neither.
 An earlier draft renormalized the field per step, injecting a nonlinearity that made
 `g=0` look capable — a confound, since removed. Without it, the linear substrate
 fails every nonlinear task and the Kerr engine is decisively responsible for the gap.
+
+## Production streaming status (2026-07-01)
+
+The production streaming path is `research/probe_streaming_compression.cpp` with:
+
+- packet memory for tiny per-node `lin` / `ker` / `sense` fields;
+- prepared Cayley flow carrier built directly from the local light cone;
+- the same phase/Kerr physics: Cayley transport, superposition, local Kerr pressure,
+  and phase-preserving overlap readout.
+
+The packet/prepared changes are carrier optimizations, not new physics. A rejected
+small-adjacency experiment changed the trajectory and was not kept. The accepted path
+preserves the same horizons, bridges, compression and recognition while reducing RAM
+and repacking cost.
+
+Latest CMake Release anchor:
+
+```text
+probe_streaming_compression.exe 10000000 7
+stream=10000000 uniqueEvery=7 field_updates=10000000 nodes=1428644
+horizon PR linear=6.61 nonlinear=2.14 compression=3.09x
+bridges total=36 true=36 false=0
+value REAL=100.0% RANDOM=27.8%
+train_sec=139.95 tokens_per_sec=71452 peak_ram_mb=1227
+```
+
+Regression gate:
+
+```bat
+ctest --test-dir build -C Release -L nonlinear --output-on-failure
+```
+
+Current nonlinear label contains:
+
+- `graph_wave_horizon_densification_contract_test`
+- `graph_wave_nonlinear_compute_contract_test`
+- `graph_wave_pure_physics_chain_contract_test`
+- `graph_wave_streaming_densification_contract_test`
+- `probe_streaming_compression_smoke`
+
+Do not tune weights or thresholds to improve this benchmark. Thresholds such as
+`TOPK`, `WMIN`, `SMIN`, and bridge coherence are operational stabilizers/noise gates,
+not the active nonlinear physics. If they are changed, document them as calibration
+and re-run the full nonlinear gate plus a 1M+ streaming run.

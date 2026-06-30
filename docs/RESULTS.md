@@ -40,15 +40,17 @@ does not apply here.
 
 | quantity | value |
 |---|---|
-| scale | **1,000,000 tokens**, ~24 s (**~42,000 tokens/s**) |
-| graph grown (by-product of the stream) | ~142,930 nodes |
-| compression | **~3.1×** (horizon PR linear 6.58 / nonlinear 2.12) |
-| recognition | REAL **100%** vs RANDOM 30.6% |
-| peak RAM | 793 MB |
+| scale | **10,000,000 tokens**, 139.95 s (**71,452 tokens/s**) |
+| graph grown (by-product of the stream) | 1,428,644 nodes |
+| compression | **3.09x** (horizon PR linear 6.61 / nonlinear 2.14) |
+| recognition | REAL **100%** vs RANDOM 27.8% |
+| bridges | 36 true / 0 false |
+| peak RAM | 1,227 MB |
+| implementation | packet memory + prepared Cayley flow carrier (same phase/Kerr physics; lower repacking cost) |
 
 Source: `research/probe_streaming_compression.cpp`,
-`tools/graph_wave_nonlinear_engine.hpp`, `research/probe_nonlinear_engine.cpp`.
-See `docs/NONLINEAR_ENGINE.md`.
+`tools/graph_wave_substrate.hpp`, `tools/graph_wave_nonlinear_engine.hpp`,
+`research/probe_nonlinear_engine.cpp`. See `docs/NONLINEAR_ENGINE.md`.
 
 ## The GNN
 
@@ -95,8 +97,8 @@ high-correlation regime (`probe_whiten`, 1.000 vs 0.48). Source: `research/probe
 
 ## Summary
 
-- 60 GNNv2 contract gates (substrate / GNN / decorrelation / memory / nonlinear) — all green; the substrate identities hold at machine precision. The GNNv3 RC1 contract is held separate.
+- 61 GNNv2 contract gates (substrate / GNN / decorrelation / memory / nonlinear) — all green; the substrate identities hold at machine precision. The GNNv3 RC1 contract is held separate.
 - Linear engine (NODES) scales to 10⁶ nodes, exact propagator, gauge-invariant, exact interference.
-- Nonlinear streaming engine (TOKENS) streams 10⁶ tokens at ~42k tokens/s, ~3× Kerr compression, 100% recognition (vs 31% random) — a separate engine; nodes/s ≠ tokens/s.
+- Nonlinear streaming engine (TOKENS) streams 10⁷ tokens at ~71.5k tokens/s, 3.09x Kerr compression, 100% recognition (vs 27.8% random), 36 true / 0 false bridges — a separate engine; nodes/s ≠ tokens/s.
 - GNN: 100% classification, 99.5% weights-free learning, 77.4% on real Cora.
 - Decorrelation glue closes the correlated-content gap (1.000 where naive gives 0.48).

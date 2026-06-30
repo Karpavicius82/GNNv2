@@ -30,11 +30,11 @@ commit subject: GNNv2 docs: correct counts to ground truth; hold GNNv3 separate 
 Tracked source inventory (current):
 
 ```text
-tools/*.cpp:     76   (61 *_contract_test = 60 GNNv2 gates + 1 GNNv3 RC1 held separate;
-                       + 9 *_diagnostic_test + 5 other *_test + 1 non-test)
+tools/*.cpp:     77   (62 *_contract_test = 61 GNNv2 gates + 1 GNNv3 RC1 held separate;
+                       + 9 *_diagnostic_test + 6 other *_test + 1 non-test)
 tools/*.hpp:      3
-research/*.cpp:  37
-docs/*.md:       12
+research/*.cpp:  43
+docs/*.md:       14
 ```
 
 The original audit below was taken at commit `0bec6e43` ("Clean documentation,
@@ -53,8 +53,9 @@ TOTAL=59
 runtime_ms=169836
 ```
 
-The suite is now **60 GNNv2 `*_contract_test` gates** (the GNNv3 RC1 contract is
-held separate), run with `ctest --test-dir build --output-on-failure`. The selected
+The suite is now **61 GNNv2 `*_contract_test` gates** (the GNNv3 RC1 contract is
+held separate), run with `ctest --test-dir build --output-on-failure`. The nonlinear
+label also includes the operational `probe_streaming_compression_smoke`. The selected
 invariant outputs below are unchanged.
 
 Selected existing contract outputs:
