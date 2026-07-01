@@ -87,9 +87,11 @@ Notes:
   the same way: `… && .\probe_nonlinear_engine.exe 1000000`.
 - **Never conflate the two engines:** `1,000,000 nodes` (node engine) ≠ `1,000,000
   tokens` (streaming engine); `nodes/s ≠ tokens/s`. Absolute throughput is
-  host-dependent — the full **speed ladder** (node engine plus the three token
-  regimes: graph-stream-only ~1.2–1.4M, realistic linear field ~150–185k reference,
-  current nonlinear Kerr ~71.5k tok/s on this host at 10M, and exactly where the cost goes) is in
+  host-dependent. On **this host**, the token ladder is: graph-stream-only **~0.5M
+  tok/s**, realistic linear field **~50–57k tok/s**, current nonlinear Kerr
+  **71.5k tok/s at 10M**. The **~1.2–1.4M tok/s** number is only the faster
+  reference-host **graph-stream-only** ceiling, not the linear/nonlinear engine. The
+  full speed ladder and cost split are in
   [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md). Current nonlinear CTest gate is
   `ctest --test-dir build -C Release -L nonlinear --output-on-failure` and includes
   the pure-physics substrate contract plus the streaming compression smoke.

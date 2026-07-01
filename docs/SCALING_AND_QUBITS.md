@@ -9,8 +9,9 @@ the hidden-qubit interpretation. Read with [`PERFORMANCE.md`](PERFORMANCE.md).
   operations and are never compared head-to-head** — each is scaled within its own
   unit. `nodes/s ≠ tokens/s`.
 - **Measured** rows are real runs; **100M** rows are linear **extrapolations** (not
-  executed at 100M), and absolute time is **host-dependent** ("this host" ≈ 2× slower
-  than a "reference host").
+  executed at 100M). Absolute time is **host-dependent**: "this host" is the current
+  local measurement source, while "ref" means older/faster reference-host results or
+  projections. Do not mix them.
 - **Hidden qubits = `log2(field dimension)`** — an information-capacity lens. The
   substrate is **classically simulable**: no quantum advantage; entanglement is
   bounded (≲ ln 2). "Linear vs nonlinear" changes **entanglement**, not qubit count.
@@ -47,8 +48,8 @@ grows by `≈ tokens / 7` → ~14.3M nodes at 100M tokens.
 
 | regime (file) | per-token work | RAM @1M *(meas.)* | time @1M *(meas., this host)* | RAM @100M *(proj.)* | time @100M *(proj.)* |
 |---|---|---|---|---|---|
-| **graph-stream only** (`probe_graph_stream_only`) | graph bookkeeping, **no field** | 76 MB | 1.9 s (~537k tok/s) | ~7.6 GB | ~3 min (ref ~1 min) |
-| **linear field** `g=0` (`probe_linear_stream`) | + project → edge-flow → unproject | 380 MB | 18.7 s (~53k tok/s) | ~38 GB | ~31 min (ref ~9 min) |
+| **graph-stream only** (`probe_graph_stream_only`) | graph bookkeeping, **no field** | 76 MB | 1.9 s (~537k tok/s) | ~7.6 GB | ~3 min this host (older/faster ref ~1 min) |
+| **linear field** `g=0` (`probe_linear_stream`) | + project → edge-flow → unproject | 380 MB | 18.7 s (~53k tok/s) | ~38 GB | ~31 min this host (older/faster ref ~9 min) |
 | **nonlinear Kerr** `g=7` (`probe_streaming_compression`) | + Kerr self-focusing, packet memory, prepared Cayley flow | 1.23 GB @10M *(meas.)* | 139.95 s @10M (~71.5k tok/s) | ~12.3 GB | ~23 min |
 
 Both RAM and time scale **linearly in tokens** (per-token work is bounded by the 2-hop

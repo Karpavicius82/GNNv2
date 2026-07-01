@@ -15,12 +15,32 @@ token.
 | `probe_linear_stream` | linear local field, `g=0` | recognition baseline with wave physics but no Kerr pressure | ~50-57k tokens/s on this host, ~150-185k tokens/s on the older reference path |
 | `probe_streaming_compression` | nonlinear local field, `g=7` | production Kerr compression + recognition | 71,452 tokens/s at 10M on this host |
 
-The 1.2-1.4M tokens/s number is **not** the linear model. It is graph-only:
-the stream updates the plastic graph, but the substrate field is not evolved.
+The 1.2-1.4M tokens/s number is **not** the linear model and **not** this host's
+measurement. It is the faster reference-host graph-only ceiling: the stream updates
+the plastic graph, but the substrate field is not evolved. On this host, the same
+graph-only class is ~0.5M tokens/s.
 
 The 71.5k tokens/s number is the current production nonlinear path:
 packet memory, prepared Cayley flow carrier, local Kerr pressure, horizon/sense
 readout, and bridge checks.
+
+## Which Number To Quote
+
+Quote the number that matches both the machine and the physics path:
+
+| where | graph only, no field | linear field, `g=0` | nonlinear Kerr, `g=7` |
+|---|---:|---:|---:|
+| this host | ~0.5M tokens/s | ~50-57k tokens/s, older map-backed path | 71,452 tokens/s at 10M, current packet/prepared path |
+| faster reference host | ~1.2-1.4M tokens/s | ~150-185k tokens/s, older map-backed path | not remeasured after packet/prepared |
+
+Interpretation:
+
+- If the quote is **~1.2-1.4M tokens/s**, it means reference-host graph bookkeeping
+  only. It does not include field evolution, recognition physics, Kerr pressure, or
+  compression.
+- If the quote is **~0.5M tokens/s**, it means this-host graph bookkeeping only.
+- If the quote is **71.5k tokens/s**, it means this-host production nonlinear
+  recognition + Kerr compression at 10M tokens.
 
 ## Why Throughput Drops When Physics Is Enabled
 

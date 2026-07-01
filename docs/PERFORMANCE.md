@@ -76,11 +76,21 @@ compression.
 
 The graph update is **cheap**. The dominant cost is the **field round trip**:
 `project → edge-flow → unproject` — building a local vector from hash maps, the 2-hop
-gather, the unitary rotations, and writing the result back. Stripping the field
-evolution alone jumps throughput from ~180k to ~1.2–1.4M tok/s on the reference host
-(~7–8×). The Kerr term adds a further cost on top of the linear field (reference host
-~2× on the older reference path; this host now measures the optimized packet/prepared
-path at 10M tokens. The exact Kerr/linear ratio is build/container dependent.
+gather, the unitary rotations, and writing the result back.
+
+The numbers must be read by host:
+
+- On **this host**, graph-stream-only is ~0.5M tok/s, the older realistic linear
+  field path is ~50–57k tok/s, and the current nonlinear packet/prepared Kerr path is
+  71.5k tok/s at 10M.
+- On the faster **reference host**, stripping the field evolution jumped throughput
+  from the older linear field path (~177–184k tok/s) to graph-stream-only
+  ~1.2–1.4M tok/s (~7–8×).
+
+Therefore the `1.2–1.4M tok/s` number is a reference-host graph-only ceiling. It is
+not a linear-field number and it was not measured on this host. The Kerr term adds
+cost on top of field evolution, but the current packet/prepared path also removed
+older carrier overhead; the exact Kerr/linear ratio is build/container dependent.
 
 ### Current nonlinear production anchor
 
@@ -108,12 +118,15 @@ Current nonlinear label contains five gates: horizon densification, nonlinear co
 pure-physics chain, streaming densification, and the streaming compression smoke.
 
 So the practical question "why didn't I see ~1.2M tok/s?" has a precise answer:
-**~1.2M tok/s is the graph-stream-only path, with the field computation removed.**
-The real engine computes the field, so the realistic figure is ~150–185k tok/s
-(reference host). Anything claiming ~1M+ tok/s *with* a full per-token field is no
-longer the `unordered_map` architecture here — it would be a fixed-array / top-k /
-cache-local backend, and should be named accordingly (e.g. `linear_stream_array_backend`),
-not `linear_stream`.
+**~1.2–1.4M tok/s was the faster reference-host graph-stream-only path, with the
+field computation removed. On this host the same class is ~0.5M tok/s.** The real
+field engines compute the field, so their realistic figures are lower: ~50–57k tok/s
+for the older linear field path on this host, ~177–184k tok/s on the reference host,
+and 71.5k tok/s for the current 10M nonlinear packet/prepared production anchor on
+this host. Anything claiming ~1M+ tok/s *with* a full per-token field is no longer the
+`unordered_map` architecture here — it would be a fixed-array / top-k / cache-local
+backend, and should be named accordingly (e.g. `linear_stream_array_backend`), not
+`linear_stream`.
 
 ---
 
@@ -157,10 +170,12 @@ cost is visible directly.
 ## 5. The never-conflate checklist
 
 - `1,000,000 nodes` (node-scaling engine) ≠ `1,000,000 tokens` (streaming engine).
-- `nodes/s` (≈1–2M) ≠ `tokens/s` (≈71k–1.4M depending on regime).
-- `~1.2–1.4M tok/s` = graph-stream **without** the field; it is **not** the engine's
-  real recognition throughput.
-- `~150–185k tok/s` = realistic linear field (the honest streaming baseline).
+- `nodes/s` (≈1–2M) ≠ `tokens/s` (≈50k–1.4M depending on host and regime).
+- `~0.5M tok/s` = this-host graph-stream **without** the field.
+- `~1.2–1.4M tok/s` = faster reference-host graph-stream **without** the field; it is
+  **not** the linear or nonlinear recognition throughput.
+- `~50–57k tok/s` = this-host older realistic linear field path.
+- `~150–185k tok/s` = reference-host older realistic linear field path.
 - `~71.5k tok/s at 10M` = current nonlinear Kerr streaming production anchor on this
   host after packet memory + prepared Cayley flow.
 - When a number is quoted, name the **engine**, the **unit**, and the **regime**.
