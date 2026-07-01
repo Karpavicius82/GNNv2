@@ -1,7 +1,8 @@
 # GNNv2 Performance — engines, units, and the speed ladder
 
 This is the precise reference for "how fast is GNNv2 and why", so the numbers are
-never confused again. Two rules up front:
+never confused again. For the short operational handoff focused only on token
+throughput regimes, see `STREAMING_THROUGHPUT_HANDOFF.md`. Two rules up front:
 
 1. There are **two distinct engines** with **different units** (see `ARCHITECTURE.md`
    §4). The **linear scaling engine** is measured in **NODES/s**; everything in the

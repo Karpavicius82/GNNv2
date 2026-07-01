@@ -42,7 +42,7 @@ nothing is fitted.
 |---|---|
 | [`tools/`](tools/README.md) | substrate core (`graph_wave_substrate.hpp`) + 61 GNNv2 `*_contract_test` gates (physics, GNN grammar, nonlinear substrate, memory, decision), each an exit-0 machine-precision check, alongside spectral/self-organising diagnostics. (The 62nd `*_contract_test` is the GNNv3 RC1 gate, held separate.) |
 | [`research/`](research/README.md) | 43 production studies and honest exploratory probes (scaling engine, nonlinear streaming, decorrelation glue, Cora benchmark, and negative results). |
-| [`docs/`](docs/) | architecture, results, the physics-only discipline, the nonlinear engine, the [`PERFORMANCE.md`](docs/PERFORMANCE.md) speed ladder (engines, units, the three token regimes), the [`SCALING_AND_QUBITS.md`](docs/SCALING_AND_QUBITS.md) 100M projection + hidden-qubit view, and [`GNNv2_HANDOFF.md`](docs/GNNv2_HANDOFF.md) (read first). |
+| [`docs/`](docs/) | architecture, results, the physics-only discipline, the nonlinear engine, the [`PERFORMANCE.md`](docs/PERFORMANCE.md) speed ladder, [`STREAMING_THROUGHPUT_HANDOFF.md`](docs/STREAMING_THROUGHPUT_HANDOFF.md) for graph-only/linear/nonlinear throughput boundaries, the [`SCALING_AND_QUBITS.md`](docs/SCALING_AND_QUBITS.md) 100M projection + hidden-qubit view, and [`GNNv2_HANDOFF.md`](docs/GNNv2_HANDOFF.md) (read first). |
 
 ## Build, test & reproduce
 

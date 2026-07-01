@@ -53,7 +53,9 @@ distinct engines that must never be conflated** (canonical: `ARCHITECTURE.md` §
 `nodes/s ≠ tokens/s`: 1,000,000 **nodes** = the linear engine; 1,000,000 **tokens** =
 the nonlinear engine. The ≈3× compression belongs to the nonlinear **token** engine.
 Full speed ladder (node engine + the three token regimes, with where the cost goes):
-`docs/PERFORMANCE.md`. The g=0 streaming baseline is `research/probe_linear_stream.cpp`.
+`docs/PERFORMANCE.md`. For the specific graph-only vs linear-field vs nonlinear-Kerr
+throughput boundary, read `docs/STREAMING_THROUGHPUT_HANDOFF.md`. The g=0 streaming
+baseline is `research/probe_linear_stream.cpp`.
 
 Run them (Windows / MSVC, from the repo root):
 
