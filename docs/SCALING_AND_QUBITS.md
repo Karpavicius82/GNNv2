@@ -4,10 +4,10 @@ Consolidated comparison of both engines: measured anchors, the 100M projection, 
 the hidden-qubit interpretation. Read with [`PERFORMANCE.md`](PERFORMANCE.md).
 
 **Ground rules (so nothing is conflated):**
-- There are **two engines with different units**. The **node-scaling engine** is in
-  **NODES**; the **streaming engine** is in **TOKENS**. They are **different
-  operations and are never compared head-to-head** — each is scaled within its own
-  unit. `nodes/s ≠ tokens/s`.
+- There are **different units and regimes**. The **node-scaling engine** is in
+  **NODES**; the streaming paths are in **TOKENS** (`g=0` linear and `g=7`
+  nonlinear). They are **different operations and are never compared head-to-head**
+  across units — each is scaled within its own unit. `nodes/s ≠ tokens/s`.
 - **Measured** rows are real runs; **100M** rows are linear **extrapolations** (not
   executed at 100M). Absolute time is **host-dependent**: "this host" is the current
   local measurement source, while "ref" means older/faster reference-host results or
@@ -49,7 +49,7 @@ grows by `≈ tokens / 7` → ~14.3M nodes at 100M tokens.
 | regime (file) | per-token work | RAM @1M *(meas.)* | time @1M *(meas., this host)* | RAM @100M *(proj.)* | time @100M *(proj.)* |
 |---|---|---|---|---|---|
 | **graph-stream only** (`probe_graph_stream_only`) | graph bookkeeping, **no field** | 76 MB | 1.9 s (~537k tok/s) | ~7.6 GB | ~3 min this host (older/faster ref ~1 min) |
-| **linear field** `g=0` (`probe_linear_stream`) | + project → edge-flow → unproject | 380 MB | 18.7 s (~53k tok/s) | ~38 GB | ~31 min this host (older/faster ref ~9 min) |
+| **linear field** `g=0` (`probe_linear_stream`) | + packet project → prepared Cayley flow → packet unproject | 113 MB | 9.657 s (~103.6k tok/s) | ~11.3 GB | ~16.1 min this host |
 | **nonlinear Kerr** `g=7` (`probe_streaming_compression`) | + Kerr self-focusing, packet memory, prepared Cayley flow | 1.23 GB @10M *(meas.)* | 139.95 s @10M (~71.5k tok/s) | ~12.3 GB | ~23 min |
 
 Both RAM and time scale **linearly in tokens** (per-token work is bounded by the 2-hop
@@ -60,16 +60,15 @@ the `g=0` control alongside).
 
 | @ 100M tokens | linear field (`g=0`) | nonlinear Kerr (`g=7`) |
 |---|---|---|
-| RAM | ~38 GB | ~12.3 GB for current packet/prepared Kerr path (not apples-to-apples with the old linear map backend) |
-| time (this host) | ~31 min old linear map backend | ~23 min current nonlinear packet/prepared backend |
+| RAM | ~11.3 GB current packet/prepared linear path | ~12.3 GB current packet/prepared Kerr path |
+| time (this host) | ~16.1 min current packet/prepared linear path | ~23 min current nonlinear packet/prepared backend |
 | compression | none (linear disperses) | **~3×** (energy concentrates) |
 | recognition | 100% (vs ~31% random, older linear baseline) | 100% (vs 27.8% random at 10M) |
 
-The current nonlinear path is no longer a pure "same backend plus Kerr" comparison:
-packet memory and prepared Cayley flow remove much of the previous carrier overhead.
-The physics result is unchanged — **~3× compression** at **100% recognition** — but the
-engineering projection is now materially lower RAM/time than the older map-backed
-nonlinear row.
+The current linear and nonlinear token paths now share the same packet/prepared
+Cayley carrier family. The remaining difference is physical: `g=0` disperses and
+does not compress; `g=7` applies Kerr pressure, compresses energy by ~3×, and costs
+more time.
 
 ### Hidden qubits — streaming
 

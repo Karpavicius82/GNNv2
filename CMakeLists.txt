@@ -20,6 +20,8 @@ endforeach()
 # SEPARATE from the GNNv2 suite: it still builds as a target, but it is not a ctest
 # gate here (build/run it directly per docs/GNNv3_RC1_HANDOFF.md).
 set(GNNV3_CONTRACT graph_wave_v3_feeling_gate_contract_test)
+set(LINEAR_CONTRACTS
+  graph_wave_linear_cayley_flow_contract_test)
 set(NONLINEAR_CONTRACTS
   graph_wave_pure_physics_chain_contract_test
   graph_wave_horizon_densification_contract_test
@@ -30,6 +32,9 @@ foreach(src ${CONTRACTS})
   if(name MATCHES "_contract_test$" AND NOT name STREQUAL GNNV3_CONTRACT)
     add_test(NAME ${name} COMMAND ${name})
     set_tests_properties(${name} PROPERTIES TIMEOUT 600)
+    if(name IN_LIST LINEAR_CONTRACTS)
+      set_tests_properties(${name} PROPERTIES LABELS stream_linear)
+    endif()
     if(name IN_LIST NONLINEAR_CONTRACTS)
       set_tests_properties(${name} PROPERTIES LABELS nonlinear)
     endif()
@@ -38,11 +43,15 @@ endforeach()
 
 # Self-contained operational smoke: unlike most research probes, this one
 # generates its own stream and returns nonzero on compression/value regressions.
+add_test(NAME probe_linear_stream_smoke COMMAND probe_linear_stream 60000 7)
+set_tests_properties(probe_linear_stream_smoke PROPERTIES TIMEOUT 120 LABELS stream_linear)
+
 add_test(NAME probe_streaming_compression_smoke COMMAND probe_streaming_compression 60000 7)
 set_tests_properties(probe_streaming_compression_smoke PROPERTIES TIMEOUT 120 LABELS nonlinear)
 
 # Usage:
 #   cmake -B build -S .            configure
-#   cmake --build build           build every contract + probe
-#   ctest --test-dir build --output-on-failure        run all contract gates
-#   ctest --test-dir build -L nonlinear               run only the nonlinear suite
+#   cmake --build build --config Release              build every contract + probe
+#   ctest --test-dir build -C Release --output-on-failure        run GNNv2 contract gates + smokes
+#   ctest --test-dir build -C Release -L stream_linear           run only the linear suite
+#   ctest --test-dir build -C Release -L nonlinear               run only the nonlinear suite

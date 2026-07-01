@@ -36,12 +36,18 @@ the two. GNNv3 lives only in `tools/graph_wave_v3_feeling_gate_contract_test.cpp
 
 ## Substrate Roles
 
-These roles are substrate primitives. In production they are packaged into **two
-distinct engines that must never be conflated** (canonical: `ARCHITECTURE.md` §4):
+These roles are substrate primitives. In production they are packaged into distinct
+paths that must never be conflated (canonical: `ARCHITECTURE.md` §4):
 
 - **Linear scaling engine** — graph propagation, **unit = NODES**. Sparse unitary
   Chebyshev `e^{-iHt}` over graph nodes: ~1,000,000 **nodes** in ~0.9 s (≈1.1M
   **nodes/s**), linear in N, norm drift ~2e-16. Source `research/probe_sparse_scale.cpp`.
+- **Linear streaming engine** — recognition baseline, **unit = TOKENS**. Streams a
+  sequence of **tokens**; each token grows a plastic graph and evolves a local 2-hop
+  `g=0` field. Current production path uses packet memory plus prepared Cayley flow:
+  1,000,000 **tokens** in 9.657 s (**103,552 tokens/s**), graph growing to 142,930
+  nodes, 113 MB peak RAM, **value_LINEAR 100%**. Source
+  `research/probe_linear_stream.cpp`, `tools/graph_wave_substrate.hpp`.
 - **Nonlinear streaming engine** — Kerr compression, **unit = TOKENS**. Streams a
   sequence of **tokens**; each token grows a plastic graph and evolves a local 2-hop
   Kerr field. Current production path uses packet memory plus prepared Cayley flow:
@@ -50,11 +56,12 @@ distinct engines that must never be conflated** (canonical: `ARCHITECTURE.md` §
   36 true / 0 false bridges. Source `research/probe_streaming_compression.cpp`,
   `tools/graph_wave_substrate.hpp`, `tools/graph_wave_nonlinear_engine.hpp`.
 
-`nodes/s ≠ tokens/s`: 1,000,000 **nodes** = the linear engine; 1,000,000 **tokens** =
-the nonlinear engine. The ≈3× compression belongs to the nonlinear **token** engine.
+`nodes/s ≠ tokens/s`: 1,000,000 **nodes** = the global node engine; 1,000,000
+**tokens** = the streaming engine. The ≈3× compression belongs to the nonlinear
+**token** engine.
 Do not mix the throughput hosts: on this host, token throughput is ~0.5M tok/s for
-graph-only, ~50–57k tok/s for the older linear-field path, and 71,452 tok/s for the
-current 10M nonlinear packet/prepared path. The ~1.2–1.4M tok/s number is only the
+graph-only, 103,552 tok/s for the current linear packet/prepared path, and 71,452
+tok/s for the current 10M nonlinear packet/prepared path. The ~1.2–1.4M tok/s number is only the
 faster reference-host graph-only ceiling, not a linear/nonlinear field number. Full
 speed ladder (node engine + the three token regimes, with where the cost goes):
 `docs/PERFORMANCE.md`. For the specific graph-only vs linear-field vs nonlinear-Kerr
@@ -66,6 +73,9 @@ Run them (Windows / MSVC, from the repo root):
 ```
 :: LINEAR engine (nodes) -- no args, sweeps N to 1,000,000 nodes:
 cl /O2 /EHsc /std:c++20 /I tools research\probe_sparse_scale.cpp && .\probe_sparse_scale.exe
+
+:: LINEAR stream (tokens, g=0) -- args = stream length and unique cadence:
+cl /O2 /EHsc /std:c++20 /I tools research\probe_linear_stream.cpp && .\probe_linear_stream.exe 1000000 7
 
 :: NONLINEAR engine (tokens) -- args = stream length and unique cadence, here 10,000,000 tokens:
 cl /O2 /EHsc /std:c++20 /I tools research\probe_streaming_compression.cpp && .\probe_streaming_compression.exe 10000000 7
@@ -106,8 +116,19 @@ Rejected optimization:
 Latest checks:
 
 ```text
+ctest --test-dir build -C Release --output-on-failure -j 8
+64 / 64 passed
+
+ctest --test-dir build -C Release -L stream_linear --output-on-failure
+2 / 2 passed
+
 ctest --test-dir build -C Release -L nonlinear --output-on-failure
 5 / 5 passed
+
+probe_linear_stream.exe 1000000 7
+value_LINEAR=100.0%
+tokens_per_sec=103552
+peak_rss_mb=113
 
 probe_streaming_compression.exe 10000000 7
 compression=3.09x
@@ -162,10 +183,11 @@ Windows / MSVC, from a Developer prompt or via CMake:
 
 ```
 cmake -B build -S .
-cmake --build build
-ctest --test-dir build --output-on-failure     # the 61 GNNv2 contract gates
-ctest --test-dir build -C Release -L nonlinear # just the nonlinear suite
-ctest --test-dir build -j 8                     # parallel (the full suite is slow serially)
+cmake --build build --config Release
+ctest --test-dir build -C Release --output-on-failure     # 62 GNNv2 contract gates + 2 smokes
+ctest --test-dir build -C Release -L stream_linear # just the linear streaming suite
+ctest --test-dir build -C Release -L nonlinear     # just the nonlinear suite
+ctest --test-dir build -C Release -j 8             # parallel (the full suite is slow serially)
 ```
 
 Single file:

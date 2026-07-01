@@ -28,6 +28,7 @@ structure. Full description in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 |---|---|
 | substrate physics | unitarity 1.2e-15, gauge/Wilson 4.4e-16, destructive interference 5.6e-31 |
 | linear engine (nodes) | **1,000,000 nodes**, ~1.1M nodes/s on this host / ~2M on reference host, unitary 2.2e-16, linear time; propagator exact at any t (1e-12) |
+| linear stream (tokens, g=0) | **1,000,000 tokens**, 103.6k tok/s on this host with packet memory + prepared Cayley flow, value_LINEAR 100% |
 | nonlinear engine (tokens) | **10,000,000 tokens**, ~71.5k tok/s on this host with packet memory + prepared Cayley flow (graph grows to ~1.43M nodes), ~3.09x Kerr compression, recognition 100% real vs 27.8% random |
 | GNN | classification **100%**, weights-free learning **99.5%** on unseen (shuffle 52%) |
 | decorrelation glue | routing **1.000** where naive collapses to 0.48 |
@@ -40,7 +41,7 @@ nothing is fitted.
 
 | path | contents |
 |---|---|
-| [`tools/`](tools/README.md) | substrate core (`graph_wave_substrate.hpp`) + 61 GNNv2 `*_contract_test` gates (physics, GNN grammar, nonlinear substrate, memory, decision), each an exit-0 machine-precision check, alongside spectral/self-organising diagnostics. (The 62nd `*_contract_test` is the GNNv3 RC1 gate, held separate.) |
+| [`tools/`](tools/README.md) | substrate core (`graph_wave_substrate.hpp`) + 62 GNNv2 `*_contract_test` gates (physics, GNN grammar, linear/nonlinear substrate, memory, decision), each an exit-0 machine-precision check, alongside spectral/self-organising diagnostics. (The 63rd `*_contract_test` is the GNNv3 RC1 gate, held separate.) |
 | [`research/`](research/README.md) | 43 production studies and honest exploratory probes (scaling engine, nonlinear streaming, decorrelation glue, Cora benchmark, and negative results). |
 | [`docs/`](docs/) | architecture, results, the physics-only discipline, the nonlinear engine, the [`PERFORMANCE.md`](docs/PERFORMANCE.md) speed ladder, [`STREAMING_THROUGHPUT_HANDOFF.md`](docs/STREAMING_THROUGHPUT_HANDOFF.md) for graph-only/linear/nonlinear throughput boundaries, the [`SCALING_AND_QUBITS.md`](docs/SCALING_AND_QUBITS.md) 100M projection + hidden-qubit view, and [`GNNv2_HANDOFF.md`](docs/GNNv2_HANDOFF.md) (read first). |
 
@@ -55,10 +56,11 @@ git-ignored `data/`).
 
 ```
 cmake -B build -S .
-cmake --build build
-ctest --test-dir build --output-on-failure      # the 61 GNNv2 contract gates
-ctest --test-dir build -L nonlinear              # just the nonlinear suite
-ctest --test-dir build -j 8                       # parallel (full suite is slow serially)
+cmake --build build --config Release
+ctest --test-dir build -C Release --output-on-failure      # 62 GNNv2 contract gates + 2 smokes
+ctest --test-dir build -C Release -L stream_linear         # just the linear streaming suite
+ctest --test-dir build -C Release -L nonlinear             # just the nonlinear suite
+ctest --test-dir build -C Release -j 8                     # parallel (full suite is slow serially)
 ```
 
 Every `*_contract_test` returns exit 0 **only** on a full pass, so a green `ctest`
@@ -76,7 +78,7 @@ has to be re-derived.
 | **substrate physics** | exact unitarity, interference, gauge flux at machine precision | `cl /O2 /EHsc /std:c++20 /I tools tools\graph_wave_unitarity_test.cpp && .\graph_wave_unitarity_test.exe` | `5/5`; norm drift ~1e-13, destructive interference 5.6e-31 |
 | **node-scaling engine** · unit **NODES** | the global GNN engine: stays unitary + linear-time at 10⁶ nodes | `cl /O2 /EHsc /std:c++20 /I tools research\probe_sparse_scale.cpp && .\probe_sparse_scale.exe` | `N=1,000,000` nodes, drift 2.22e-16; **~1.1M nodes/s here / ~2M reference** |
 | **graph-stream only** · unit **TOKENS** (no field) | throughput ceiling — graph bookkeeping with the field OFF | `cl /O2 /EHsc /std:c++20 research\probe_graph_stream_only.cpp && .\probe_graph_stream_only.exe 1000000` | `RESULT PASS`, 1M tokens → 142,930 nodes; **~0.5M tok/s here / ~1.2–1.4M reference** |
-| **linear field stream** · unit **TOKENS** (g=0) | streaming baseline: recognition with the nonlinearity OFF | `cl /O2 /EHsc /std:c++20 /I tools research\probe_linear_stream.cpp && .\probe_linear_stream.exe 1000000` | PR avg ~3.85, **value_LINEAR 100%**, `RESULT PASS`; **~50k tok/s here / ~150–185k reference** |
+| **linear field stream** · unit **TOKENS** (g=0) | streaming baseline: recognition with the nonlinearity OFF, same packet/prepared Cayley carrier as nonlinear | `cl /O2 /EHsc /std:c++20 /I tools research\probe_linear_stream.cpp && .\probe_linear_stream.exe 1000000` | PR avg 3.83, **value_LINEAR 100%**, `RESULT PASS`; **103.6k tok/s here** |
 | **nonlinear Kerr stream** · unit **TOKENS** (g=7) | the production recognition + compression engine | `cl /O2 /EHsc /std:c++20 /I tools research\probe_streaming_compression.cpp && .\probe_streaming_compression.exe 10000000 7` | **~3.09x compression**, REAL 100% / RANDOM 27.8%, exit 0; **~71.5k tok/s here**, peak RAM ~1.23 GB at 10M tokens |
 | **real data — Cora** · unit **NODES** | weights-free GNN on a real citation graph | place LINQS data so `cora/cora.content` + `cora/cora.cites` sit under `data/`, then build and run **from `data/`** (the probe opens `cora/...` relative to the working dir): `cl /O2 /EHsc /std:c++20 /I tools research\probe_cora.cpp && pushd data && ..\probe_cora.exe && popd` | own 58.3%, FLOW 1-hop 74.6%, **FLOW 2-hop 77.4%** |
 
@@ -85,10 +87,10 @@ Notes:
   probes take `[stream_tokens] [uniqueEvery]` (default `60000 7`) — pass `1000000` for
   the 1M-token run. The closed Kerr engine `research/probe_nonlinear_engine.cpp` runs
   the same way: `… && .\probe_nonlinear_engine.exe 1000000`.
-- **Never conflate the two engines:** `1,000,000 nodes` (node engine) ≠ `1,000,000
+- **Never conflate the units and regimes:** `1,000,000 nodes` (node engine) ≠ `1,000,000
   tokens` (streaming engine); `nodes/s ≠ tokens/s`. Absolute throughput is
   host-dependent. On **this host**, the token ladder is: graph-stream-only **~0.5M
-  tok/s**, realistic linear field **~50–57k tok/s**, current nonlinear Kerr
+  tok/s**, production linear field **103.6k tok/s**, current nonlinear Kerr
   **71.5k tok/s at 10M**. The **~1.2–1.4M tok/s** number is only the faster
   reference-host **graph-stream-only** ceiling, not the linear/nonlinear engine. The
   full speed ladder and cost split are in

@@ -6,17 +6,18 @@ header `semantic_sparse_text8.hpp`). Some include the substrate core via
 `research/` siblings. The tables below are a representative map of the directory, not
 an exhaustive listing.
 
-The first four groups are the **production-verified** results that back the **two
-engines** (linear scaling + nonlinear streaming), the glue, and the real-data
+The first four groups are the **production-verified** results that back the core
+engines (linear node scaling + linear/nonlinear token streaming), the glue, and the real-data
 benchmark. The last group is the **honest exploratory record** — including probes
 that failed or were superseded. Negative results are kept on purpose; they mark the
 dead-ends so they are not re-walked.
 
 GNNv2 ships **two distinct engines measured in different units — never conflate them**
 (canonical: `docs/ARCHITECTURE.md` §4). The **linear scaling engine** propagates over
-graph **NODES** (throughput in nodes/s); the **nonlinear streaming engine** streams
-**TOKENS** (throughput in tokens/s). `1,000,000 nodes` = linear; `1,000,000 tokens` =
-nonlinear; **nodes/s ≠ tokens/s**.
+graph **NODES** (throughput in nodes/s); the streaming engines consume **TOKENS**
+(throughput in tokens/s): `probe_linear_stream` is `g=0`, and
+`probe_streaming_compression` is `g=7`. `1,000,000 nodes` is not `1,000,000 tokens`;
+**nodes/s ≠ tokens/s**.
 
 ## Linear scaling engine — graph propagation, unit: NODES (verified)
 | file | result |
@@ -30,7 +31,7 @@ nonlinear; **nodes/s ≠ tokens/s**.
 |---|---|
 | `probe_streaming_compression` | streams **TOKENS** into a plastic graph + local 2-hop Kerr field; current packet/prepared production path: 10M tokens, 3.09x compression, REAL 100% / RANDOM 27.8%, 36 true / 0 false bridges, ~71.5k tokens/s, peak RAM ~1.23 GB. See `docs/ARCHITECTURE.md` §4, `docs/NONLINEAR_ENGINE.md` |
 | `probe_nonlinear_engine` | driver for the closed Kerr engine (`tools/graph_wave_nonlinear_engine.hpp`): psi/chi densification + tau structure-sensing over the same **TOKEN** stream |
-| `probe_linear_stream` | LINEAR token-stream control (`g = 0`, no Kerr): same stream generator and plastic-graph params, a single linear field — the tok/s + recognition **baseline** the Kerr layer is measured against (REAL 100% / RANDOM ≈31%, throughput in **tokens/s**). This is the streaming engine with the nonlinearity off — not the node-scaling engine |
+| `probe_linear_stream` | LINEAR token-stream control (`g = 0`, no Kerr): same stream generator and plastic-graph params, packet memory + prepared Cayley flow, **103,552 tok/s at 1M** with value_LINEAR 100%. This is the streaming engine with the nonlinearity off — not the node-scaling engine |
 | `probe_graph_stream_only` | GRAPH-STREAM-ONLY ceiling (no field at all): same stream + plastic-graph bookkeeping, but no `project`/edge-flow/`unproject`. The top of the token speed ladder (~1.2–1.4M tok/s reference). The gap to `probe_linear_stream` IS the per-token field cost. See `docs/PERFORMANCE.md` |
 | `probe_flow_microbench` | isolates the local nonlinear flow operator from graph/memory/projection costs; use it to compare rational/no-stats, rational/stats, exp/no-stats and exp/stats carrier paths without changing streaming physics |
 

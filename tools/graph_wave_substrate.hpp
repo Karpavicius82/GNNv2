@@ -370,6 +370,36 @@ inline void observeCayleyBond(const Vec& psi, const LocalCayleyFlowBond& e, Loca
  stats->max_bond_speed = std::max(stats->max_bond_speed, std::abs(j) / rho);
  stats->bond_visits++;
 }
+inline void edgeLocalCayleyFlowPrepared(Vec& psi,
+                                        const std::vector<LocalCayleyFlowBond>& bonds,
+                                        int steps,
+                                        LocalFlowStats* stats = nullptr) {
+ if (!stats) {
+  for (int s = 0; s < steps; ++s) {
+   for (const auto& e : bonds) rotateCayleyBond(psi[e.a], psi[e.b], e);
+   for (auto it = bonds.rbegin(); it != bonds.rend(); ++it) rotateCayleyBond(psi[it->a], psi[it->b], *it);
+  }
+  return;
+ }
+ for (int s = 0; s < steps; ++s) {
+  for (const auto& e : bonds) {
+   observeCayleyBond(psi, e, stats);
+   rotateCayleyBond(psi[e.a], psi[e.b], e);
+  }
+  for (auto it = bonds.rbegin(); it != bonds.rend(); ++it) {
+   const auto& e = *it;
+   observeCayleyBond(psi, e, stats);
+   rotateCayleyBond(psi[e.a], psi[e.b], e);
+  }
+ }
+}
+inline Vec edgeLocalCayleyFlow(Vec psi, const std::vector<SparseBond>& bonds,
+                               double dt, int steps,
+                               LocalFlowStats* stats = nullptr) {
+ LocalCayleyFlowCarrier carrier(bonds, dt);
+ edgeLocalCayleyFlowPrepared(psi, carrier.bonds, steps, stats);
+ return psi;
+}
 inline void edgeLocalRationalKerrFlowPairPrepared(Vec& lin, Vec& ker,
                                                   const std::vector<LocalCayleyFlowBond>& bonds,
                                                   double dt, double g_ker, int steps,

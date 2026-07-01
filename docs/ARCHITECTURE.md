@@ -73,7 +73,7 @@ stream:
 The flux gates (`flux = 0` transmits, `flux = π` blocks exactly) are not a separate
 mechanism — they are the exact dark fringes of the same interference field.
 
-## 4. Two engines (never conflate)
+## 4. Engine Paths (Never Conflate)
 
 GNNv2 ships **two distinct production engines**. They operate on different objects and
 are measured in different units — keep them separate.
@@ -88,9 +88,13 @@ from the lab contracts to a global GNN. Source: `research/probe_sparse_scale.cpp
 Run (no args; sweeps N to 1M):
 `cl /O2 /EHsc /std:c++20 /I tools research\probe_sparse_scale.cpp && .\probe_sparse_scale.exe`.
 
-**Nonlinear streaming engine — Kerr compression. Unit: TOKENS.**
-A separate engine streams a sequence of **tokens**; each token event grows a plastic
-graph and evolves a local 2-hop field with Kerr nonlinearity
+**Streaming engines — local field over TOKENS.**
+The streaming family consumes a sequence of **tokens**; each token event grows a
+plastic graph and evolves a local 2-hop field. The production linear baseline is
+`g = 0`: packet memory + prepared Cayley flow, **103,552 tokens/s** at 1M tokens,
+value_LINEAR 100%, 113 MB peak RAM. Source: `research/probe_linear_stream.cpp`.
+
+The nonlinear member adds Kerr pressure:
 `i ψ̇ = −H ψ − g|ψ|²ψ`. It concentrates energy (**3.09x compression** vs the linear
 `g = 0` baseline) while preserving recognition (REAL 100% vs RANDOM 27.8%). Current
 production throughput is **71,452 tokens/s** on a 10,000,000-token CMake Release run;
@@ -102,9 +106,11 @@ the phase/Kerr physics. Source: `research/probe_streaming_compression.cpp`,
 Run (10M tokens; args = stream length and unique cadence):
 `cl /O2 /EHsc /std:c++20 /I tools research\probe_streaming_compression.cpp && .\probe_streaming_compression.exe 10000000 7`.
 
-The two never mix: 1,000,000 **nodes** = the linear engine; 1,000,000 **tokens** = the
-nonlinear engine; **nodes/s ≠ tokens/s**. When any doc says "the engine", it must say
-WHICH. Numbers in `docs/RESULTS.md` and `docs/NONLINEAR_ENGINE.md`.
+The paths never mix: 1,000,000 **nodes** = the global node engine; 1,000,000
+**tokens** = a streaming run; `g=0` linear stream is not `g=7` nonlinear stream;
+**nodes/s ≠ tokens/s**. When any doc says "the engine", it must say WHICH unit and
+WHICH `g` regime. Numbers in `docs/RESULTS.md`, `docs/PERFORMANCE.md`, and
+`docs/STREAMING_THROUGHPUT_HANDOFF.md`.
 
 ## 5. Discipline
 

@@ -30,6 +30,23 @@ GRAPH NODES, `O(E)` per term. Input and throughput are in **nodes** (`nodes/s`).
 Source: `research/probe_sparse_scale.cpp`, `research/probe_physics.cpp`,
 `research/probe_crosscheck.cpp`.
 
+## Linear streaming engine — prepared Cayley field (unit: TOKENS)
+
+A separate token-stream baseline with the nonlinearity off (`g=0`). It uses the same
+packet memory and prepared Cayley carrier family as the nonlinear stream, but no Kerr
+pressure, no horizon gate and no bridge materialization.
+
+| quantity | value |
+|---|---|
+| scale | **1,000,000 tokens**, 9.657 s (**103,552 tokens/s**) |
+| graph grown (by-product of the stream) | 142,930 nodes |
+| recognition | **value_LINEAR 100.0%** |
+| PR | avg 3.830, min 1.000, max 15.915 |
+| peak RAM | 113 MB |
+| implementation | packet memory + prepared Cayley flow carrier, `g=0` |
+
+Source: `research/probe_linear_stream.cpp`, `tools/graph_wave_substrate.hpp`.
+
 ## Nonlinear streaming / compression engine — Kerr (unit: TOKENS)
 
 A **separate** engine, not the one above. It streams a sequence of **tokens**; each
@@ -97,8 +114,9 @@ high-correlation regime (`probe_whiten`, 1.000 vs 0.48). Source: `research/probe
 
 ## Summary
 
-- 61 GNNv2 contract gates (substrate / GNN / decorrelation / memory / nonlinear) — all green; the substrate identities hold at machine precision. The GNNv3 RC1 contract is held separate.
+- Full CTest Release suite: **64 / 64 passed** (62 GNNv2 contract gates + 2 operational smokes). The GNNv3 RC1 contract is held separate from the GNNv2 gate set.
 - Linear engine (NODES) scales to 10⁶ nodes, exact propagator, gauge-invariant, exact interference.
+- Linear streaming engine (TOKENS) streams 10⁶ tokens at 103.6k tokens/s, 100% recognition, with the same packet/prepared Cayley carrier family as nonlinear but `g=0`.
 - Nonlinear streaming engine (TOKENS) streams 10⁷ tokens at ~71.5k tokens/s, 3.09x Kerr compression, 100% recognition (vs 27.8% random), 36 true / 0 false bridges — a separate engine; nodes/s ≠ tokens/s.
 - GNN: 100% classification, 99.5% weights-free learning, 77.4% on real Cora.
 - Decorrelation glue closes the correlated-content gap (1.000 where naive gives 0.48).

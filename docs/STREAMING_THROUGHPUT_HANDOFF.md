@@ -11,8 +11,8 @@ token.
 
 | path | field work | what it measures | last known throughput |
 |---|---|---|---|
-| `probe_graph_stream_only` | none | token ingestion + plastic graph bookkeeping only | ~0.5M tokens/s on this host, ~1.2-1.4M tokens/s on the faster reference host |
-| `probe_linear_stream` | linear local field, `g=0` | recognition baseline with wave physics but no Kerr pressure | ~50-57k tokens/s on this host, ~150-185k tokens/s on the older reference path |
+| `probe_graph_stream_only` | none | token ingestion + plastic graph bookkeeping only | 388k tokens/s latest on this host (~0.5M prior), ~1.2-1.4M tokens/s on the faster reference host |
+| `probe_linear_stream` | linear local field, `g=0` | recognition baseline with wave physics but no Kerr pressure | 103,552 tokens/s at 1M on this host, current packet/prepared path |
 | `probe_streaming_compression` | nonlinear local field, `g=7` | production Kerr compression + recognition | 71,452 tokens/s at 10M on this host |
 
 The 1.2-1.4M tokens/s number is **not** the linear model and **not** this host's
@@ -30,15 +30,17 @@ Quote the number that matches both the machine and the physics path:
 
 | where | graph only, no field | linear field, `g=0` | nonlinear Kerr, `g=7` |
 |---|---:|---:|---:|
-| this host | ~0.5M tokens/s | ~50-57k tokens/s, older map-backed path | 71,452 tokens/s at 10M, current packet/prepared path |
-| faster reference host | ~1.2-1.4M tokens/s | ~150-185k tokens/s, older map-backed path | not remeasured after packet/prepared |
+| this host | 388k latest (~0.5M prior) | 103,552 tokens/s at 1M, current packet/prepared path | 71,452 tokens/s at 10M, current packet/prepared path |
+| faster reference host | ~1.2-1.4M tokens/s | ~150-185k tokens/s, older map-backed path; current packet/prepared path not remeasured | not remeasured after packet/prepared |
 
 Interpretation:
 
 - If the quote is **~1.2-1.4M tokens/s**, it means reference-host graph bookkeeping
   only. It does not include field evolution, recognition physics, Kerr pressure, or
   compression.
-- If the quote is **~0.5M tokens/s**, it means this-host graph bookkeeping only.
+- If the quote is **388k to ~0.5M tokens/s**, it means this-host graph bookkeeping only.
+- If the quote is **103,552 tokens/s**, it means this-host production linear
+  recognition at `g=0` with packet memory and prepared Cayley flow.
 - If the quote is **71.5k tokens/s**, it means this-host production nonlinear
   recognition + Kerr compression at 10M tokens.
 
@@ -53,7 +55,7 @@ node/window update -> touch/decay/prune -> plaquette phase bookkeeping
 Linear field adds:
 
 ```text
-2-hop light cone -> project field -> edge-flow -> unproject field
+2-hop light cone -> packet project field -> prepared Cayley edge-flow -> packet unproject field
 ```
 
 Nonlinear Kerr adds:
@@ -64,6 +66,54 @@ same local flow -> Kerr phase pressure -> sense/horizon/bridge readout
 
 So the drop is not a regression. It is the cost of computing the field. A full
 field path cannot honestly be compared to graph-only throughput.
+
+## Current Production Linear Anchor
+
+Command, from a CMake Release build:
+
+```bat
+build\Release\probe_linear_stream.exe 1000000 7
+```
+
+Observed result:
+
+```text
+updates=1000000 nodes=142930 edges=205 stable_events=60237
+PR avg=3.830 min=1.000 max=15.915 value_LINEAR=100.0%
+local_nodes avg=14.01 max=29   bonds avg=25.17 max=63
+bond_visits total=100699520 avg=100.70 max=252 max_phase_speed=0.000
+train_sec=9.657 tokens_per_sec=103552 peak_rss_mb=113
+RESULT : 1 / 1  (PASS)
+```
+
+Interpretation:
+
+- The linear field now uses the same packet/prepared Cayley carrier family as the
+  nonlinear engine.
+- There is no Kerr phase, no horizon detector and no bridge materialization.
+- Recognition stayed 100%.
+- Throughput is now faster than the nonlinear Kerr path, as expected.
+
+## Current Linear Regression Gate
+
+Run:
+
+```bat
+ctest --test-dir build -C Release -L stream_linear --output-on-failure
+```
+
+Last result:
+
+```text
+2 / 2 passed
+```
+
+The label contains:
+
+```text
+graph_wave_linear_cayley_flow_contract_test
+probe_linear_stream_smoke
+```
 
 ## Current Production Nonlinear Anchor
 
